@@ -19,7 +19,7 @@ function estimate_rewards(ipp_problem::IPP, gp::AbstractGPs.PosteriorGP, path::V
         # NOTE: we look at the path to the node, and then the path from the node to the goal
         # only to check node i is reachable. We only append node i to the current path for the value estimate (not the path to the node)
         # i.e. this is the teleporation assumption in the paper
-        path_to_node = vcat(vcat(path[1:end-1], shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, path[end], i)), shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, i, n)[2:end])
+        path_to_node = vcat(vcat(path[1:end-1], shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, path[end], i)), shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, i, ipp_problem.Graph.goal)[2:end])
 
         if path_distance(ipp_problem, path_to_node) <= ipp_problem.B
             push!(reachable_nodes, i)
@@ -151,3 +151,29 @@ function action(ipp_problem::IPP, method::ASPC, gp::AbstractGPs.PosteriorGP, exe
     return planned_path
 end
 
+function solve(ipp_problem::IPP, method::ASPC)
+    """ 
+    Takes in IPP problem definition and returns the path and objective value
+    using the solution method specified by method.
+    """
+
+    path = Vector{Int64}([ipp_problem.Graph.start])
+    gp, y_hist = initialize_gp(ipp_problem)
+    time_left = ipp_problem.solution_time
+
+    while path[end] != ipp_problem.Graph.goal && time_left > 0
+        planned_path, planning_time = @timed action(ipp_problem, method, gp, path)
+        time_left -= planning_time
+
+        push!(path, planned_path[2:(2+ipp_problem.replan_rate-1)]...)
+        gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:(2+ipp_problem.replan_rate-1)])
+
+        if length(planned_path[(2+ipp_problem.replan_rate):end]) <= ipp_problem.replan_rate
+            push!(path, planned_path[(2+ipp_problem.replan_rate):end]...)
+            gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[(2+ipp_problem.replan_rate):end])
+            break
+        end
+    end
+
+    return path, objective(ipp_problem, path, y_hist)
+end

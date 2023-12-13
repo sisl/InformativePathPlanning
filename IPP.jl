@@ -18,10 +18,10 @@ using Pajarito, Hypatia, HiGHS, Gurobi, MosekTools
 using Parameters
 
 abstract type SolutionMethod end
-struct MCTS <: SolutionMethod end
 struct ASPC <: SolutionMethod end
-struct Exact <: SolutionMethod end
 struct Greedy <: SolutionMethod end
+struct MCTS <: SolutionMethod end
+struct Exact <: SolutionMethod end
 struct random <: SolutionMethod end
 struct DuttaMIP <: SolutionMethod end
 
@@ -53,12 +53,13 @@ end
     B::Int                                                                  # budget
     true_map::Matrix{Float64}                                               # map of true values at all nodes in the environment
     solution_time::Float64                                                  # time allowed to find a solution
-    replan_rate::Int                                                       # replan after replan_rate steps 
+    replan_rate::Int                                                        # replan after replan_rate steps 
 end
 
 include("utilities/build_graph.jl")
 include("utilities/utilities.jl")
 include("methods/ASPC.jl")
+include("methods/greedy.jl")
 include("utilities/plotting.jl")
 
 function solve(ipp_problem::IPP)
@@ -66,31 +67,4 @@ function solve(ipp_problem::IPP)
     Takes in IPP problem definition and returns the path and objective value.
     """
     return solve(ipp_problem, ASPC())
-end
-
-function solve(ipp_problem::IPP, method::ASPC)
-    """ 
-    Takes in IPP problem definition and returns the path and objective value
-    using the solution method specified by method.
-    """
-
-    path = Vector{Int64}([ipp_problem.Graph.start])
-    gp, y_hist = initialize_gp(ipp_problem)
-    time_left = ipp_problem.solution_time
-
-    while path[end] != ipp_problem.Graph.goal && time_left > 0
-        planned_path, planning_time = @timed action(ipp_problem, method, gp, path)
-        time_left -= planning_time
-
-        push!(path, planned_path[2:(2+ipp_problem.replan_rate-1)]...)
-        gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:(2+ipp_problem.replan_rate-1)])
-
-        if length(planned_path[(2+ipp_problem.replan_rate):end]) <= ipp_problem.replan_rate
-            push!(path, planned_path[(2+ipp_problem.replan_rate):end]...)
-            gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[(2+ipp_problem.replan_rate):end])
-            break
-        end
-    end
-
-    return path, objective(ipp_problem, path, y_hist)
 end
