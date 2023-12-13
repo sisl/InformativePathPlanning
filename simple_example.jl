@@ -9,7 +9,7 @@ function run_simple_example()
     start = 1
     goal = n
     objective = "A-IPP"
-    edge_length = 100
+    edge_length = 1
     B = 4*edge_length
     solution_time = 120.0
     replan_rate = round(Int, 0.1 * B/edge_length * sqrt(n))
