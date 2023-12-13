@@ -56,10 +56,10 @@ end
     replan_rate::Int                                                       # replan after replan_rate steps 
 end
 
-include("build_graph.jl")
-include("utilities.jl")
-include("ASPC.jl")
-include("plotting.jl")
+include("utilities/build_graph.jl")
+include("utilities/utilities.jl")
+include("methods/ASPC.jl")
+include("utilities/plotting.jl")
 
 function solve(ipp_problem::IPP)
     """ 
