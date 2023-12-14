@@ -1,3 +1,15 @@
+function scale(n::Int, lower::Int, upper::Int)
+    # Define the input range
+    x1 = 4
+    x2 = 3844
+
+    # Calculate the corresponding output
+    r = (((n - x1) * (upper - lower)) / (x2 - x1)) + lower
+
+    # Round to nearest integer and return
+    return round(Int, r)
+end
+
 function compute_mip_path(n::Int, G::Vector{Any}, z, start::Int, end_idx::Int, dist::Matrix{Float64})
     v1 = start
     soln = [v1]
@@ -40,7 +52,7 @@ function run_dutta_mip(ipp_problem::IPP, idx)
     start = ipp_problem.Graph.start
     goal = ipp_problem.Graph.goal
     B = ipp_problem.B
-    timeout = ipp_problem.solution_time
+    timeout = ipp_problem.solution_time 
     all_pairs_shortest_paths = ipp_problem.Graph.all_pairs_shortest_paths
     dist = ipp_problem.Graph.distances
     G_dict = Dict(j => Set(G[j]) for j in 1:n)
@@ -52,6 +64,13 @@ function run_dutta_mip(ipp_problem::IPP, idx)
     v = diag(kernel(ipp_problem.Graph.Omega, ipp_problem.Graph.Omega, ipp_problem.MeasurementModel.L))
     w = ones(m)
 
+    # Adjust to numerical precision
+    C = round.(C, digits=5)
+    b = round.(b, digits=5) 
+
+    # set timer AFTER we have constructed problem for more fair comparison to Dutta et al.
+    tick()
+
     @variable(model, z[idx], Bin)
 
     # define continuous coefficient variables
@@ -59,7 +78,7 @@ function run_dutta_mip(ipp_problem::IPP, idx)
 
     # build quadratic objective
     objs = @expression(model, [i=1:m], w[i] * (sum(alpha[j, i] * C[j, k] * alpha[k, i] for j in 1:n for k in 1:n) - 2 * sum(b[j, i] * alpha[j, i] for j in 1:n) + v[i]))
-    
+
     # minimize total estimation error
     @objective(model, Min, sum(objs))
     
@@ -184,10 +203,10 @@ function run_dutta_mip(ipp_problem::IPP, idx)
     end
     MOI.set(model, MOI.LazyConstraintCallback(), (cb_data) -> subtour_callback(cb_data, model, G, goal))
 
-    # set timer AFTER we have constructed problem for more fair comparison to Dutta et al.
-    tick()
+    timeout -= scale(n, 0, 5) # subtract time due to slightly longer setup time for Dutta formulation 
     setup_time = tok()
     set_time_limit_sec(model, setup_time < timeout ? timeout-setup_time : 0.0)
+
     JuMP.optimize!(model)
 
     if termination_status(model) == MOI.INFEASIBLE
