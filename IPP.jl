@@ -39,9 +39,10 @@ end
 
 @with_kw struct MeasurementModel
     σ::Float64                                                              # measurement standard deviation
-    Σₓ::Matrix{Float64}                                                     # prior covariance matrix 
+    Σₓ::Matrix{Float64}                                                     # prior covariance matrix
+    Σₓ⁻¹::Matrix{Float64}                                                   # inverse of prior covariance matrix 
     L::Float64                                                              # length scale used in the kernel to build the covariance matrix
-    A::Matrix{Int}                                                          # meaurement n x m characterization matrix 
+    A::Matrix{Float64}                                                          # meaurement n x m characterization matrix 
 end
 
 @with_kw struct IPP
@@ -60,11 +61,13 @@ include("utilities/build_graph.jl")
 include("utilities/utilities.jl")
 include("methods/ASPC.jl")
 include("methods/greedy.jl")
+include("methods/exact.jl")
 include("utilities/plotting.jl")
 
 function solve(ipp_problem::IPP)
     """ 
     Takes in IPP problem definition and returns the path and objective value.
     """
-    return solve(ipp_problem, ASPC())
+    # return solve(ipp_problem, ASPC())
+    return solve(ipp_problem, Exact())
 end
