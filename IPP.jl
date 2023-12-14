@@ -33,6 +33,7 @@ struct DuttaMIP <: SolutionMethod end
     Omega::Matrix{Float64}                                                  # location of target prediction nodes
     all_pairs_shortest_paths::Graphs.FloydWarshallState{Float64, Int64}     # all shortest paths from node i to node j precomputed for the graph
     distances::Matrix{Float64}                                              # distances between all nodes in the graph
+    true_map::Matrix{Float64}                                               # map of true values at all nodes in the environment
     edge_length::Int                                                        # length of one side of the grid (assumes square grid with dimensions edge_length x edge_length)
 end
 
@@ -51,7 +52,6 @@ end
     MeasurementModel::MeasurementModel
     objective::String                                                       # A-IPP, D-IPP, expected_improvement
     B::Int                                                                  # budget
-    true_map::Matrix{Float64}                                               # map of true values at all nodes in the environment
     solution_time::Float64                                                  # time allowed to find a solution
     replan_rate::Int                                                        # replan after replan_rate steps 
 end

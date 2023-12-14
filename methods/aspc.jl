@@ -1,4 +1,4 @@
-function estimate_rewards(ipp_problem::IPP, gp::AbstractGPs.PosteriorGP, path::Vector{Int64})
+function estimate_rewards(ipp_problem::IPP, gp::AbstractGPs.PosteriorGP, path::Vector{Int64}, y_hist::Vector{Float64})
     """
     Estimates the rewards for all reachable nodes in the graph given the current path and the GP. 
     This assumes we can teleport to any node in the graph (i.e. we can visit any node in the graph without having to visit all nodes in the path to get there).
@@ -124,11 +124,11 @@ function solve_dp_orienteering(grid_rewards::Matrix, start::Int, goal::Int, max_
     return dp[start_pos[1], start_pos[2], max_steps + 1], linear_path
 end
 
-function action(ipp_problem::IPP, method::ASPC, gp::AbstractGPs.PosteriorGP, executed_path::Vector{Int64})
+function action(ipp_problem::IPP, method::ASPC, gp::AbstractGPs.PosteriorGP, executed_path::Vector{Int64}, y_hist::Vector{Float64})
     n = ipp_problem.n
     n_sqrt = isqrt(n)
     pos = executed_path[end]
-    reachable_nodes, rewards = estimate_rewards(ipp_problem, gp, executed_path)
+    reachable_nodes, rewards = estimate_rewards(ipp_problem, gp, executed_path, y_hist)
 
     budget_remaining = ipp_problem.B - path_distance(ipp_problem, executed_path)
     steps_remaining = round(Int, budget_remaining*(n_sqrt-1)/ipp_problem.Graph.edge_length)
@@ -162,7 +162,7 @@ function solve(ipp_problem::IPP, method::ASPC)
     time_left = ipp_problem.solution_time
 
     while path[end] != ipp_problem.Graph.goal && time_left > 0
-        planned_path, planning_time = @timed action(ipp_problem, method, gp, path)
+        planned_path, planning_time = @timed action(ipp_problem, method, gp, path, y_hist)
         time_left -= planning_time
 
         push!(path, planned_path[2:(2+ipp_problem.replan_rate-1)]...)

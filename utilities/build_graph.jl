@@ -1,4 +1,4 @@
-function build_graph(rng, data_path::String, n::Int, m::Int, edge_length::Int, start::Int, goal::Int)
+function build_graph(rng, data_path::String, n::Int, m::Int, edge_length::Int, start::Int, goal::Int, objective::String, i::Int=1)
     G, Theta, Omega = build_G_Theta_Omega(rng, n, m, edge_length)
     dist = pairwise(Euclidean(), Theta', dims=2)
 
@@ -18,7 +18,19 @@ function build_graph(rng, data_path::String, n::Int, m::Int, edge_length::Int, s
         JLD2.save(data_path * "/graph_cache/" * "$(n)_all_pairs_shortest_paths.jld2", "all_pairs_shortest_paths", all_pairs_shortest_paths)
     end
 
-    return IPPGraph(G, start, goal, Theta, Omega, all_pairs_shortest_paths, dist, edge_length)
+    if objective == "expected_improvement"
+        try
+            # build_maps ? build_gp_map(ipp_parameters.rng, G, problem.N, Theta, exp_parameters.L, exp_parameters.map_path, i) :
+            true_map = load(data_path * "/maps/" * "true_map_$(n)_$(i).jld")["true_map"]
+        catch
+            @error("For expected_improvement: maps should be built by running build_maps.jl script before running")
+        end
+    else
+        # true map doesn't matter for non-adaptive objectives
+        true_map = rand(rng, isqrt(n), isqrt(n))
+    end
+
+    return IPPGraph(G, start, goal, Theta, Omega, all_pairs_shortest_paths, dist, true_map, edge_length)
 end
 
 function build_graph(G::Vector{Any}, n::Int, Theta::Matrix{Float64})

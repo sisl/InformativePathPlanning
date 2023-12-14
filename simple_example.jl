@@ -10,7 +10,7 @@ function run_simple_example()
         m = 20
         start = 1
         goal = n
-        objective = "A-IPP"
+        objective = "expected_improvement"#"A-IPP"
         edge_length = 1
         B = 4*edge_length
         solution_time = 120.0
@@ -18,7 +18,7 @@ function run_simple_example()
         true_map = reshape(rand(rng, MvNormal(zeros(n), Diagonal(ones(n)*0.1))), (isqrt(n), isqrt(n)))
 
         # Generate a grid graph
-        Graph = build_graph(rng, data_path, n, m, edge_length, start, goal)
+        Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective)
 
         # Generate a measurement model
         σ = 1.0
@@ -28,7 +28,7 @@ function run_simple_example()
         measurement_model = MeasurementModel(σ, Σₓ, L, A)
 
         # Create an IPP problem
-        ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, true_map, solution_time, replan_rate)
+        ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, solution_time, replan_rate)
 
         # Solve the IPP problem
         val, t = @timed solve(ipp_problem)

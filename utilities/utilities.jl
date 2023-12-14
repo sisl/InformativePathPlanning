@@ -31,7 +31,7 @@ function initialize_gp(ipp_problem::IPP)
 
     x = ipp_problem.Graph.Theta[path, :]
     X = [x[i, :] for i in 1:size(x, 1)]
-    y = ipp_problem.true_map[path] + [rand(ipp_problem.rng, Normal(0, ipp_problem.MeasurementModel.σ))]
+    y = ipp_problem.Graph.true_map[path] + [rand(ipp_problem.rng, Normal(0, ipp_problem.MeasurementModel.σ))]
     y_hist = y
     gp = AbstractGPs.posterior(gp(X, ipp_problem.MeasurementModel.σ), y)
     return gp, y_hist
@@ -46,7 +46,7 @@ function update_gp(ipp_problem::IPP, gp::AbstractGPs.PosteriorGP, y_hist, planne
     x = ipp_problem.Graph.Theta[planned_path, :]
     X = [x[i, :] for i in 1:size(x, 1)]
     
-    y = ipp_problem.true_map[planned_path] + rand(ipp_problem.rng, MvNormal(zeros(length(planned_path)), Diagonal(ones(length(planned_path)).*ipp_problem.MeasurementModel.σ)) )
+    y = ipp_problem.Graph.true_map[planned_path] + rand(ipp_problem.rng, MvNormal(zeros(length(planned_path)), Diagonal(ones(length(planned_path)).*ipp_problem.MeasurementModel.σ)) )
     gp = AbstractGPs.posterior(gp(X, ipp_problem.MeasurementModel.σ), y)
     y_hist = vcat(y_hist, y...)
 
@@ -115,4 +115,12 @@ function objective(ipp_problem::IPP, path::Vector{Int64}, y_hist::Vector{Float64
         α = 1.0
         return sum(μ - α*σ)
     end
+end
+
+prob_of_improvement(y_min, μ, σ) = cdf(Normal(μ, σ), y_min) 
+
+function expected_improvement(y_min, μ, σ)
+    p_imp = prob_of_improvement(y_min, μ, σ)
+    p_ymin = pdf(Normal(μ, σ), y_min)
+    return (y_min - μ)*p_imp + (σ^2)*p_ymin
 end

@@ -3,7 +3,7 @@ function Plots.plot(ipp_problem::IPP, path::Vector{Int}, objVal::Float64, runtim
     B = ipp_problem.B
     n = ipp_problem.n
     m = ipp_problem.m
-    true_map = ipp_problem.true_map
+    true_map = ipp_problem.Graph.true_map
     edge_length = ipp_problem.Graph.edge_length
     Theta = ipp_problem.Graph.Theta
     Omega = ipp_problem.Graph.Omega
