@@ -62,12 +62,24 @@ include("utilities/utilities.jl")
 include("methods/ASPC.jl")
 include("methods/greedy.jl")
 include("methods/exact.jl")
+include("methods/dutta_mip.jl")
 include("utilities/plotting.jl")
 
 function solve(ipp_problem::IPP)
     """ 
     Takes in IPP problem definition and returns the path and objective value.
     """
-    # return solve(ipp_problem, ASPC())
-    return solve(ipp_problem, Exact())
+    return solve(ipp_problem, ASPC())
+end
+
+function relax(ipp_problem::IPP)
+    """ 
+    Takes in IPP problem definition and returns the lower bound objective value for A and D-IPP.
+    """
+    if ipp_problem.objective ∉ ["A-IPP", "D-IPP"]
+        @error("You tried to return a lower bound for an objective that is not implemented")
+    else
+        _, lower_bound = solve(ipp_problem, Exact(), true)
+        return lower_bound
+    end
 end

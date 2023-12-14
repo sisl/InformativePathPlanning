@@ -117,6 +117,27 @@ function objective(ipp_problem::IPP, path::Vector{Int64}, y_hist::Vector{Float64
     end
 end
 
+function objective(ipp_problem::IPP, path::Vector{Int64})
+    gp = AbstractGPs.GP(with_lengthscale(SqExponentialKernel(), ipp_problem.MeasurementModel.L))
+    Ω = [ipp_problem.Graph.Omega[i, :] for i in 1:size(ipp_problem.Graph.Omega, 1)]
+    ν = ipp_problem.MeasurementModel.σ^2 .* ones(1:length(path))
+    y_hist = zeros(length(path)) # y_hist does not matter if we're not using expected_improvement or lower_confidence_bound
+
+    x = ipp_problem.Graph.Theta[path, :]
+    X = [x[i, :] for i in 1:size(x, 1)]    
+    y = y_hist
+    post_gp = AbstractGPs.posterior(gp(X, ν), y)
+
+    if ipp_problem.objective == "A-IPP"
+        variances = var(post_gp(Ω))
+        return sum(variances)
+    elseif ipp_problem.objective == "D-IPP"
+        return logdet(cov(post_gp(Ω)))
+    else
+        @error("objective function not implemented")
+    end
+end
+
 prob_of_improvement(y_min, μ, σ) = cdf(Normal(μ, σ), y_min) 
 
 function expected_improvement(y_min, μ, σ)

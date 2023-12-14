@@ -4,11 +4,11 @@ function run_simple_example()
     data_path = "/Users/joshuaott/InformativePathPlanning/data/"
     rng = MersenneTwister(12345)
 
-    n = 10^2
+    n = 50^2
     m = 20
     start = 1
     goal = n
-    objective = "D-IPP"#"expected_improvement"
+    objective = "A-IPP"#"expected_improvement"
     edge_length = 1
     B = 4*edge_length
     solution_time = 120.0
@@ -35,6 +35,8 @@ function run_simple_example()
     # Solve the IPP problem
     val, t = @timed solve(ipp_problem)
     path, objective_value = val
+
+    # @show relax(ipp_problem)
 
     # Plot the IPP problem
     plot(ipp_problem, path, objective_value, t)
