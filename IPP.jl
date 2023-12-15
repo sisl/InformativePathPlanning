@@ -20,7 +20,7 @@ using Parameters
 abstract type SolutionMethod end
 struct ASPC <: SolutionMethod end
 struct Greedy <: SolutionMethod end
-struct MCTS <: SolutionMethod end
+struct mcts <: SolutionMethod end
 struct Exact <: SolutionMethod end
 struct random <: SolutionMethod end
 struct DuttaMIP <: SolutionMethod end
@@ -63,13 +63,16 @@ include("methods/ASPC.jl")
 include("methods/greedy.jl")
 include("methods/exact.jl")
 include("methods/dutta_mip.jl")
+include("methods/mcts.jl")
 include("utilities/plotting.jl")
 
 function solve(ipp_problem::IPP)
     """ 
     Takes in IPP problem definition and returns the path and objective value.
     """
-    return solve(ipp_problem, ASPC())
+    # return solve(ipp_problem, ASPC())
+    # return solve(ipp_problem, mcts())
+    return solve(ipp_problem, random())
 end
 
 function relax(ipp_problem::IPP)
