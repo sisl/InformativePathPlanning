@@ -32,5 +32,5 @@ julia> include("simple_example.jl")
 To reproduce the figures from the paper:
 ```
 julia> include("run_paper_experiments.jl")
-julia> figure_1(load_data=false)
+julia> figure_1()
 ```

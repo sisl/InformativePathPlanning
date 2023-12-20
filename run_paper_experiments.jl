@@ -307,6 +307,6 @@ function figure_9()
 end
 
 
-# figure_1(load_data=true)
+# figure_1(true)
 # figure_1()
 # figure_3()
