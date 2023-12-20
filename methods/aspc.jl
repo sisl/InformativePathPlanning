@@ -128,7 +128,10 @@ function action(ipp_problem::IPP, method::ASPC, gp::AbstractGPs.PosteriorGP, exe
     n = ipp_problem.n
     n_sqrt = isqrt(n)
     pos = executed_path[end]
-    reachable_nodes, rewards = estimate_rewards(ipp_problem, gp, executed_path, y_hist)
+
+    val, t = @timed estimate_rewards(ipp_problem, gp, executed_path, y_hist)
+    reachable_nodes, rewards = val
+    println("Estimate Rewards Time: $(t)")  
 
     budget_remaining = ipp_problem.B - path_distance(ipp_problem, executed_path)
     steps_remaining = round(Int, budget_remaining*(n_sqrt-1)/ipp_problem.Graph.edge_length)
@@ -145,7 +148,7 @@ function action(ipp_problem::IPP, method::ASPC, gp::AbstractGPs.PosteriorGP, exe
 
     if path_value == -Inf
         println("No solution found")
-        planned_path = shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, pos, n)
+        planned_path = Vector{Int64}()#shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, pos, n)
     end
 
     return planned_path
@@ -160,19 +163,33 @@ function solve(ipp_problem::IPP, method::ASPC)
     path = Vector{Int64}([ipp_problem.Graph.start])
     gp, y_hist = initialize_gp(ipp_problem)
     time_left = ipp_problem.solution_time
+    prev_planned_path = shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, path[end], ipp_problem.Graph.goal)
 
     while path[end] != ipp_problem.Graph.goal && time_left > 0
         planned_path, planning_time = @timed action(ipp_problem, method, gp, path, y_hist)
         time_left -= planning_time
 
+        if planned_path == Vector{Int64}()
+            # if no solution was found then use the previous solution
+            planned_path = prev_planned_path
+        end
+
         if length(planned_path[(2+ipp_problem.replan_rate):end]) <= ipp_problem.replan_rate
-            push!(path, planned_path[(2+ipp_problem.replan_rate):end]...)
-            gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[(2+ipp_problem.replan_rate):end])
+            # this is our last path since we're within the replan rate of the goal
+            push!(path, planned_path[2:end]...)
+            gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:end])
             break
         else
             push!(path, planned_path[2:(2+ipp_problem.replan_rate-1)]...)
             gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:(2+ipp_problem.replan_rate-1)])
+            prev_planned_path = planned_path[(2+ipp_problem.replan_rate-1):end]
         end    
+    end
+
+    if path[end] != ipp_problem.Graph.goal
+        sp_to_goal = shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, path[end], ipp_problem.Graph.goal)[2:end]
+        push!(path, sp_to_goal...)
+        gp, y_hist = update_gp(ipp_problem, gp, y_hist, sp_to_goal)
     end
 
     return path, objective(ipp_problem, path, y_hist)

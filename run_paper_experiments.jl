@@ -74,7 +74,7 @@ function figure_1(load_data=false, data_path="data/")
         for (n_idx, n) in enumerate(grid_nodes)
             start = 1
             goal = n
-            replan_rate = round(Int, 0.1 * B/edge_length * sqrt(n))
+            replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n)) #round(Int, 0.1 * B/edge_length * sqrt(n))
 
             # true map doesn't matter for non-adaptive objectives
             true_map = rand(rng, isqrt(n), isqrt(n))
@@ -186,7 +186,7 @@ function figure_2(load_data=false, data_path="data/")
         for (n_idx, n) in enumerate(grid_nodes)
             start = 1
             goal = n
-            replan_rate = round(Int, 0.1 * B/edge_length * sqrt(n))
+            replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
 
             # true map doesn't matter for non-adaptive objectives
             true_map = rand(rng, isqrt(n), isqrt(n))
@@ -308,7 +308,7 @@ function figure_2(load_data=false, data_path="data/")
         for (n_idx, n) in enumerate(grid_nodes)
             start = 1
             goal = n
-            replan_rate = round(Int, 0.1 * B/edge_length * sqrt(n))
+            replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
 
             # true map doesn't matter for non-adaptive objectives
             true_map = rand(rng, isqrt(n), isqrt(n))
@@ -428,14 +428,14 @@ function figure_3(load_data=false, data_path="data/")
         data = JLD2.load(data_path * "figure_3.jld2", "data")
     else
         data = []
-        methods = [Exact(), trΣ⁻¹(), Greedy(), ASPC(), mcts(), random()]
+        methods = [ASPC(), Exact(), trΣ⁻¹(), Greedy(), mcts(), random()]
 
         p = Progress(length(grid_nodes)*num_sims*length(methods))
 
         for (n_idx, n) in enumerate(grid_nodes)
             start = 1
             goal = n
-            replan_rate = round(Int, 0.1 * B/edge_length * sqrt(n))
+            replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
 
             # true map doesn't matter for non-adaptive objectives
             true_map = rand(rng, isqrt(n), isqrt(n))
