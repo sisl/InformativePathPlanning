@@ -38,11 +38,6 @@ function initialize_gp(ipp_problem::IPP)
 end
 
 function update_gp(ipp_problem::IPP, gp::AbstractGPs.PosteriorGP, y_hist, planned_path)
-    # if length(planned_path[(2+ipp_problem.replan_rate):end]) <= ipp_problem.replan_rate
-    #     path_to_use = planned_path[2:end]
-    # else
-    #     path_to_use = planned_path[2:(2+ipp_problem.replan_rate-1)]
-    # end
     x = ipp_problem.Graph.Theta[planned_path, :]
     X = [x[i, :] for i in 1:size(x, 1)]
     
@@ -63,28 +58,6 @@ function objective(ipp_problem::IPP, path::Vector{Int64}, y_hist::Vector{Float64
         @show length(y_hist)
         @show length(path)
         @error("length(y_hist) != length(path)")
-        # # this means that we're computing the objective value for a path that we haven't visited yet
-        # # therefore we must use the mean of posterior GP for y values
-        # executed_limit = length(y_hist)
-        # executed_path = path[1:executed_limit]
-        # planned_path = path[(executed_limit+1):end]
-
-        # # Executed Path
-        # x = Theta[executed_path, :]
-        # X = [x[i, :] for i in 1:size(x, 1)]
-        # ν = σ_max^2 .* ones(1:length(executed_path))
-        # drill_path_idx = [findfirst(x->x==i, executed_path) for i in drills]
-        # ν[drill_path_idx] .= σ_min
-        # post_gp = AbstractGPs.posterior(gp(X, ν), y_hist)
-
-        # # Planned Path
-        # x = Theta[planned_path, :]
-        # X = [x[i, :] for i in 1:size(x, 1)]
-        # ν = σ_max^2 .* ones(1:length(planned_path))
-        # drill_path_idx = [findfirst(x->x==i, planned_path) for i in drills]
-        # ν[drill_path_idx] .= σ_min
-        # planned_y = mean(post_gp(X)) # this is what we expect to measure if we visit those locations
-        # post_gp = AbstractGPs.posterior(post_gp(X, ν), planned_y)
     else
         x = ipp_problem.Graph.Theta[path, :]
         X = [x[i, :] for i in 1:size(x, 1)]    

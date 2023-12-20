@@ -14,7 +14,7 @@ using Distances
 using Distributions
 using AbstractGPs
 using TickTock
-using Pajarito, Hypatia, HiGHS, Gurobi, MosekTools
+using Pajarito, Hypatia, HiGHS, MosekTools, Gurobi
 using Parameters
 
 abstract type SolutionMethod end
@@ -22,6 +22,7 @@ struct ASPC <: SolutionMethod end
 struct Greedy <: SolutionMethod end
 struct mcts <: SolutionMethod end
 struct Exact <: SolutionMethod end
+struct trΣ⁻¹ <: SolutionMethod end
 struct random <: SolutionMethod end
 struct DuttaMIP <: SolutionMethod end
 
@@ -70,9 +71,7 @@ function solve(ipp_problem::IPP)
     """ 
     Takes in IPP problem definition and returns the path and objective value.
     """
-    # return solve(ipp_problem, ASPC())
-    # return solve(ipp_problem, mcts())
-    return solve(ipp_problem, random())
+    return solve(ipp_problem, ASPC())
 end
 
 function relax(ipp_problem::IPP)

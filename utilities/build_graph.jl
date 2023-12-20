@@ -66,8 +66,11 @@ function build_G_Theta_Omega(rng, n::Int, m::Int, edge_length::Int)
     X, Y = meshgrid(xg, yg)
     Theta = hcat(X[:], Y[:])
 
-    # create prediction location set (Omega)
-    Omega = Theta[rand(rng, 1:n, m), :]
+    # create prediction location set (Omega): random samples between 0 and edge_length
+    omega_x = rand(rng, m)*edge_length
+    omega_y = rand(rng, m)*edge_length
+    Omega = hcat(omega_x, omega_y)
+    # Omega = Theta[rand(rng, 1:n, m), :]
 
     # create adjacency list
     G = adjList(n)

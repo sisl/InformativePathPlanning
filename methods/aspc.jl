@@ -165,14 +165,14 @@ function solve(ipp_problem::IPP, method::ASPC)
         planned_path, planning_time = @timed action(ipp_problem, method, gp, path, y_hist)
         time_left -= planning_time
 
-        push!(path, planned_path[2:(2+ipp_problem.replan_rate-1)]...)
-        gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:(2+ipp_problem.replan_rate-1)])
-
         if length(planned_path[(2+ipp_problem.replan_rate):end]) <= ipp_problem.replan_rate
             push!(path, planned_path[(2+ipp_problem.replan_rate):end]...)
             gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[(2+ipp_problem.replan_rate):end])
             break
-        end
+        else
+            push!(path, planned_path[2:(2+ipp_problem.replan_rate-1)]...)
+            gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:(2+ipp_problem.replan_rate-1)])
+        end    
     end
 
     return path, objective(ipp_problem, path, y_hist)

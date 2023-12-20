@@ -41,7 +41,7 @@ function run_dutta_mip(ipp_problem::IPP, idx)
     Dutta, Shamak, Nils Wilde, and Stephen L. Smith. "Informative Path Planning in Random Fields via Mixed Integer Programming."
     2022 IEEE 61st Conference on Decision and Control (CDC). IEEE, 2022.
     """
-    model = Model(Gurobi.Optimizer)
+    model = Model(Gurobi.Optimizer) # Mosek does not support SOS1 constraints
 
     G = ipp_problem.Graph.G
     A = ipp_problem.MeasurementModel.A
@@ -203,7 +203,6 @@ function run_dutta_mip(ipp_problem::IPP, idx)
     end
     MOI.set(model, MOI.LazyConstraintCallback(), (cb_data) -> subtour_callback(cb_data, model, G, goal))
 
-    timeout -= scale(n, 0, 5) # subtract time due to slightly longer setup time for Dutta formulation 
     setup_time = tok()
     set_time_limit_sec(model, setup_time < timeout ? timeout-setup_time : 0.0)
 

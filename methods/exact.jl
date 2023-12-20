@@ -37,13 +37,13 @@ function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
             optimizer_with_attributes(
                 Pajarito.Optimizer,
                 "oa_solver" => optimizer_with_attributes(
-                    HiGHS.Optimizer,
+                    Gurobi.Optimizer,
                     MOI.Silent() => true,
-                    "mip_feasibility_tolerance" => 1e-8,
-                    "mip_rel_gap" => 1e-6,
+                    "FeasibilityTol" => 1e-8,
+                    "MIPGap" => 1e-6,
                 ),
                 "conic_solver" =>
-                    optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true),
+                    optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true),
             )
         )
     end
@@ -73,13 +73,9 @@ function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
     # Objective
     @objective(model, Min, tr(Y))
 
-    # z_sums = [sum(z[(i,j)] for j in G_dict[i]) for i in 1:n]
-    # za_mat = sum(z_sums[i]*A[i, :]*A[i, :]' for i in 1:n)
-    # Σ = σ⁻²∑(∑zᵢⱼ)aᵢaᵢᵀ + Σₓ⁻¹
-    z_sums = [JuMP.@expression(model, sum(z[(i, j)] for j in G_dict[i])) for i in 1:n]
-    za_mat = JuMP.@expression(model, sum(z_sums[i] * (A[i, :] * A[i, :]') for i in 1:n))
-
-    Σ_est_inv = σ^(-2) .* za_mat + Σₓ⁻¹
+    z_sums = [sum(z[(i,j)] for j in G_dict[i]) for i in 1:n]
+    ZA_mat = σ^(-2)*sum(z_sums[i]*A[i, :]*A[i, :]' for i in 1:n)
+    Σ_est_inv = JuMP.@expression(model, (ZA_mat + Σₓ⁻¹))
 
     @constraint(model, [Y Diagonal(ones(m)); Diagonal(ones(m)) Σ_est_inv] >= 0, PSDCone())
 
@@ -165,13 +161,13 @@ function run_DIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
             optimizer_with_attributes(
                 Pajarito.Optimizer,
                 "oa_solver" => optimizer_with_attributes(
-                    HiGHS.Optimizer,
+                    Gurobi.Optimizer,
                     MOI.Silent() => true,
-                    "mip_feasibility_tolerance" => 1e-8,
-                    "mip_rel_gap" => 1e-6,
+                    "FeasibilityTol" => 1e-8,
+                    "MIPGap" => 1e-6,
                 ),
                 "conic_solver" =>
-                    optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true),
+                    optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true),
             )
         )
     end
@@ -201,12 +197,9 @@ function run_DIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
     # Objective
     @objective(model, Max, t)
 
-    # z_sums = [sum(z[(i,j)] for j in G_dict[i]) for i in 1:n]
-    # za_mat = sum(z_sums[i]*A[i, :]*A[i, :]' for i in 1:n)
-    # Σ = σ⁻²∑(∑zᵢⱼ)aᵢaᵢᵀ + Σₓ⁻¹
-    z_sums = [JuMP.@expression(model, sum(z[(i, j)] for j in G_dict[i])) for i in 1:n]
-    za_mat = JuMP.@expression(model, sum(z_sums[i] * (A[i, :] * A[i, :]') for i in 1:n))
-    Σ_est_inv = σ^(-2) .* za_mat + Σₓ⁻¹
+    z_sums = [sum(z[(i,j)] for j in G_dict[i]) for i in 1:n]
+    ZA_mat = σ^(-2)*sum(z_sums[i]*A[i, :]*A[i, :]' for i in 1:n)
+    Σ_est_inv = JuMP.@expression(model, (ZA_mat + Σₓ⁻¹))
 
     @constraint(model, [t, 1, (Σ_est_inv[i, j] for i in 1:m for j in 1:i)...] in MOI.LogDetConeTriangle(m))
 
@@ -308,12 +301,9 @@ function run_BIPP_exact(ipp_problem::IPP, idx)
 
     @variable(model, z[idx], Bin)  
 
-    # z_sums = [sum(z[(i,j)] for j in G_dict[i]) for i in 1:n]
-    # za_mat = sum(z_sums[i]*A[i, :]*A[i, :]' for i in 1:n)
-    # Σ = σ⁻²∑(∑zᵢⱼ)aᵢaᵢᵀ + Σₓ⁻¹
-    z_sums = [JuMP.@expression(model, sum(z[(i, j)] for j in G_dict[i])) for i in 1:n]
-    za_mat = JuMP.@expression(model, sum(z_sums[i] * (A[i, :] * A[i, :]') for i in 1:n))
-    Σ_est_inv = σ^(-2) .* za_mat + Σₓ⁻¹
+    z_sums = [sum(z[(i,j)] for j in G_dict[i]) for i in 1:n]
+    ZA_mat = σ^(-2)*sum(z_sums[i]*A[i, :]*A[i, :]' for i in 1:n)
+    Σ_est_inv = JuMP.@expression(model, (ZA_mat + Σₓ⁻¹))
 
     @objective(model, Max, tr(Σ_est_inv))
 
@@ -401,8 +391,7 @@ function solve(ipp_problem::IPP, method::Exact, relax::Bool=false)
         return path, objective(ipp_problem, path)
 
     elseif ipp_problem.objective == "B-IPP"
-        path, objVal = run_BIPP_exact(ipp_problem, idx)
-        return path, objective(ipp_problem, path)
+        @error("B-IPP exact method should be called using trΣ⁻¹()")
 
     elseif ipp_problem.objective == "D-IPP"
         path, objVal = run_DIPP_exact(ipp_problem, idx, relax)
@@ -410,5 +399,35 @@ function solve(ipp_problem::IPP, method::Exact, relax::Bool=false)
 
     else
         error("Objective not recognized Exact")
+    end
+end
+
+function solve(ipp_problem::IPP, method::trΣ⁻¹, relax::Bool=false)
+    """ 
+    Takes in IPP problem definition and returns the path and objective value
+    using the solution method specified by method.
+    """
+
+    idx = []
+    for (v1, edges) in collect(enumerate(ipp_problem.Graph.G))
+        for v2 in edges
+            push!(idx, (v1, v2)) 
+        end
+    end
+
+    if ipp_problem.objective == "A-IPP"
+        path, objVal = run_BIPP_exact(ipp_problem, idx)
+        return path, objective(ipp_problem, path)
+
+    elseif ipp_problem.objective == "B-IPP"
+        path, objVal = run_BIPP_exact(ipp_problem, idx)
+        return path, objective(ipp_problem, path)
+
+    elseif ipp_problem.objective == "D-IPP"
+        path, objVal = run_DIPP_exact(ipp_problem, idx)
+        return path, objective(ipp_problem, path)
+
+    else
+        error("Objective not recognized trΣ⁻¹")
     end
 end
