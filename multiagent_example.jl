@@ -4,7 +4,8 @@ function run_simple_example()
     data_path = "/Users/joshuaott/InformativePathPlanning/data/"
     rng = MersenneTwister(12345)
 
-    n = 10^2
+    M = 3 # number of agents 
+    n = 20^2
     m = 20
     start = 1
     goal = n
@@ -12,7 +13,7 @@ function run_simple_example()
     edge_length = 1
     B = 4*edge_length
     solution_time = 120.0
-    replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))
+    replan_rate = 1#round(Int, 0.05 * B/edge_length * sqrt(n))
     true_map = rand(rng, isqrt(n), isqrt(n))
 
     # Generate a grid graph

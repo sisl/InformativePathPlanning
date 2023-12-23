@@ -58,6 +58,11 @@ end
     replan_rate::Int                                                        # replan after replan_rate steps 
 end
 
+@with_kw struct MultiagentIPP
+    ipp_problem::IPP                                                        # IPP problem
+    M::Int                                                                  # Number of agents
+end
+
 include("utilities/build_graph.jl")
 include("utilities/utilities.jl")
 include("methods/ASPC.jl")
@@ -66,6 +71,13 @@ include("methods/exact.jl")
 include("methods/dutta_mip.jl")
 include("methods/mcts.jl")
 include("utilities/plotting.jl")
+
+function solve(ipp_problem::MultiagentIPP)
+    """ 
+    Takes in MultiagentIPP problem definition and returns M paths and the objective value.
+    """
+    return solve(ipp_problem, ASPC())
+end
 
 function solve(ipp_problem::IPP)
     """ 

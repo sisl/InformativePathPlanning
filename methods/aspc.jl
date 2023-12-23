@@ -194,3 +194,131 @@ function solve(ipp_problem::IPP, method::ASPC)
 
     return path, objective(ipp_problem, path, y_hist)
 end
+
+function solve(mipp::MultiagentIPP, method::ASPC)
+    """ 
+    Takes in MultiagentIPP problem definition and returns the M paths and the objective value
+    using the solution method specified by method.
+    """
+
+    paths = Vector{Vector{Int64}}([[mipp.ipp_problem.Graph.start] for _ in 1:mipp.M])
+    true_gp, y_hist = initialize_gp(ipp_problem)
+    time_left = ipp_problem.solution_time
+    prev_planned_paths = [shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, path[end], ipp_problem.Graph.goal) for _ in 1:mipp.M]
+
+    while all([paths[i][end] for i in 1:mipp.M] .!= ipp_problem.Graph.goal) && time_left > 0
+        planning_gp = deepcopy(true_gp)
+        for i in 1:mipp.M
+            planned_path, planning_time = @timed action(ipp_problem, method, gp, path, y_hist)
+            time_left -= planning_time
+    
+            if planned_path == Vector{Int64}()
+                # if no solution was found then use the previous solution
+                planned_path = prev_planned_paths[i]
+            end
+    
+            if length(planned_path[(2+ipp_problem.replan_rate):end]) <= ipp_problem.replan_rate
+                # this is our last path since we're within the replan rate of the goal
+                push!(paths[i], planned_path[2:end]...)
+                gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:end])
+                continue
+            else
+                push!(paths[i], planned_path[2:(2+ipp_problem.replan_rate-1)]...)
+                gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:(2+ipp_problem.replan_rate-1)])
+                prev_planned_path = planned_path[(2+ipp_problem.replan_rate-1):end]
+            end    
+        end
+    end
+
+    if path[end] != ipp_problem.Graph.goal
+        sp_to_goal = shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, path[end], ipp_problem.Graph.goal)[2:end]
+        push!(path, sp_to_goal...)
+        gp, y_hist = update_gp(ipp_problem, gp, y_hist, sp_to_goal)
+    end
+
+    return path, objective(ipp_problem, path, y_hist)
+end
+
+
+function solve(mipp::MultiagentIPP, method::ASPC, plot_gif=false)
+    """
+    Takes in MultiagentIPP problem definition and returns the M paths and the objective value
+    using the solution method specified by method.
+    """
+
+    paths = Vector{Vector{Int64}}([[mipp.ipp_problem.Graph.start] for _ in 1:mipp.M])
+    gp, y_hist = initialize_gp(ipp_problem)
+    time_left = ipp_problem.solution_time
+    prev_planned_paths = [shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, path[end], ipp_problem.Graph.goal) for _ in 1:mipp.M]
+    termination_flags = fill(false, mipp.M)
+
+    if plot_gif
+        # set up logging of path history
+        paths_hist = Vector{Vector{Vector{Int64}}}([[] for _ in 1:mipp.M])
+        planned_paths_hist = Vector{Vector{Vector{Int64}}}([[] for _ in 1:mipp.M])
+        gp_hist = Vector{AbstractGPs.PosteriorGP}([[] for _ in 1:mipp.M])
+    end
+
+    while all([paths[i][end] for i in 1:mipp.M] .!= ipp_problem.Graph.goal) && time_left > 0 && !all(termination_flags)
+        planning_gp = deepcopy(gp)
+        for i in 1:mipp.M
+            if termination_flags[i]
+                continue
+            end
+
+            planned_path, planning_time = @timed action(ipp_problem, method, planning_gp, path, y_hist)
+            time_left -= planning_time
+    
+            if planned_path == Vector{Int64}()
+                # if no solution was found then use the previous solution
+                planned_path = prev_planned_paths[i]
+            end
+    
+            if length(planned_path[(2+ipp_problem.replan_rate):end]) <= ipp_problem.replan_rate
+                # this is our last path since we're within the replan rate of the goal
+                push!(paths[i], planned_path[2:end]...)
+                planning_gp, y_hist = update_gp(ipp_problem, planning_gp, y_hist, planned_path[2:end])
+                gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:end])
+                termination_flags[i] = true
+            else
+                push!(paths[i], planned_path[2:(2+ipp_problem.replan_rate-1)]...)
+                planning_gp, y_hist = update_gp(ipp_problem, planning_gp, y_hist, planned_path[2:end])
+                gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:(2+ipp_problem.replan_rate-1)])
+                prev_planned_paths[i] = planned_path[(2+ipp_problem.replan_rate-1):end]
+            end    
+
+            if plot_gif
+                push!(paths_hist[i], deepcopy(paths[i]))
+                push!(planned_paths_hist[i], deepcopy(planned_path))
+            end
+        end
+        if plot_gif 
+            push!(gp_hist, deepcopy(gp))
+        end
+    end
+
+    for i in 1:mipp.M
+        if paths[i][end] != ipp_problem.Graph.goal
+            sp_to_goal = shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, paths[i][end], ipp_problem.Graph.goal)[2:end]
+            push!(paths[i], sp_to_goal...)
+            gp, y_hist = update_gp(ipp_problem, gp, y_hist, sp_to_goal)
+
+            if plot_gif
+                push!(path_hists[i], deepcopy(paths[i]))
+                push!(planned_paths_hist[i], sp_to_goal)
+            end
+        end
+    end
+
+    if plot_gif 
+        push!(gp_hist, deepcopy(gp))
+    end
+
+    if plot_gif
+        plot(mipp, paths_hist, planned_paths_hist, gp_hist)
+        JLD2.save("data/mipp_gif_paths_hist.jld2", "paths_hist", paths_hist)
+        JLD2.save("data/mipp_gif_paths_hist.jld2", "planned_paths_hist", planned_paths_hist)
+    end
+
+    return paths, objective(ipp_problem, paths, y_hist)
+end
