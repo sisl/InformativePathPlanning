@@ -29,31 +29,39 @@ function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist
 
     Theta = mipp.ipp_problem.Graph.Theta
     L = mipp.ipp_problem.MeasurementModel.L
-    plot_scale = range(0, mipp.ipp_problem.edge_length, length=100) #1:0.1:10
+    plot_scale = range(0, mipp.ipp_problem.Graph.edge_length, length=100) #1:0.1:10
     X_plot = [[i,j] for i = plot_scale, j = plot_scale]
     plot_size = size(X_plot)
     plot_Omega = Matrix(hcat(X_plot...)')
     Ω = [plot_Omega[i, :] for i in 1:size(plot_Omega, 1)]
     agent_colors = [:blue, :red, :white]
 
-    anim = @animate for i in planning_steps
+
+    @show planning_steps
+    @show length(planned_paths_hist)
+    anim = @animate for i in 1:planning_steps
+        @show i 
         # heatmap of GP variance
-        gp = gp_hist[i]
+        post_gp = gp_hist[i]
         fxs = var(post_gp(Ω))
         heatmap(collect(plot_scale), collect(plot_scale), reshape(fxs, plot_size...), c = cgrad(:inferno, rev = false), xaxis=false, yaxis=false, legend=false, grid=false, clim=(0,1))
-        
+
         for j in 1:mipp.M
+            if i > length(paths_hist[j])
+                path = paths_hist[j][end]
+                plot!(Theta[path, 2], Theta[path, 1], color=agent_colors[j], linewidth=3, label="Agent $(j)")
+                continue
+            end
             # plot executed path so far for agent i 
             path = paths_hist[j][i]
             plot!(Theta[path, 2], Theta[path, 1], color=agent_colors[j], linewidth=3, label="Agent $(j)")
 
             # plot planned path for agent i
             planned_path = planned_paths_hist[j][i]
-            plot!(Theta[planned_path, 2], Theta[planned_path, 1], color=:yellow, linewidth=3, linestyle=:dash)
+            plot!(Theta[planned_path, 2], Theta[planned_path, 1], color=agent_colors[j], linewidth=3, linestyle=:dash)
         end
     end
-
-    gif(anim, "figures/multiagent.gif", fps = 1)
+    Plots.gif(anim,  "figures/multiagent.gif", fps = 5)
 end
 
     

@@ -185,7 +185,7 @@ function figure_2(load_data=false, data_path="data/")
         data = JLD2.load(data_path * "figure_2.jld2", "data")
     else
         data = []
-        methods = [Exact(), trΣ⁻¹(), Greedy(), ASPC(), mcts(), random()]
+        methods = [ASPC(), Exact(), trΣ⁻¹(), Greedy(), mcts(), random()]
 
         p = Progress(length(grid_nodes)*num_sims*length(methods))
 
@@ -461,4 +461,5 @@ end
 
 # figure_1(true)
 # figure_1()
-figure_3()
+figure_2()
+# figure_3()
