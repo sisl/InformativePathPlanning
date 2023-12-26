@@ -18,6 +18,7 @@ using ColorSchemes
     σ_max::Float64
     objVal::Float64
     y_hist::Vector{Float64}
+    EI_hist::Vector{Float64}
     lower_bound::Float64
     upper_bound::Float64
     path::Vector{Int}
@@ -79,9 +80,6 @@ function figure_1(load_data=false, data_path="data/")
             goal = n
             replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n)) #round(Int, 0.1 * B/edge_length * sqrt(n))
 
-            # true map doesn't matter for non-adaptive objectives
-            true_map = rand(rng, isqrt(n), isqrt(n))
-
             # Generate a grid graph
             Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective)
 
@@ -117,7 +115,7 @@ function figure_1(load_data=false, data_path="data/")
                     # Solve the IPP problem
                     val, t = @timed solve(ipp_problem, method)
                     path, objective_value = val
-                    new_data = SimulationData(sim_number=shared_idx, run_type=method, n=n, m=m, B=B, L=L, replan_rate=replan_rate, timeout=solution_time, σ_min=1e-5, σ_max=σ, objVal=objective_value, y_hist=Vector{Float64}(), lower_bound=0.0, upper_bound=0.0, path=path, drills=Vector{Int}(), Omega=ipp_problem.Graph.Omega, runtime=t)
+                    new_data = SimulationData(sim_number=shared_idx, run_type=method, n=n, m=m, B=B, L=L, replan_rate=replan_rate, timeout=solution_time, σ_min=1e-5, σ_max=σ, objVal=objective_value, y_hist=Vector{Float64}(), EI_hist=Vector{Float64}(), lower_bound=0.0, upper_bound=0.0, path=path, drills=Vector{Int}(), Omega=ipp_problem.Graph.Omega, runtime=t)
                     push!(data, new_data)
 
                     @show objective_value
@@ -194,9 +192,6 @@ function figure_2(load_data=false, data_path="data/")
             goal = n
             replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
 
-            # true map doesn't matter for non-adaptive objectives
-            true_map = rand(rng, isqrt(n), isqrt(n))
-
             # Generate a grid graph
             Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective)
 
@@ -232,7 +227,7 @@ function figure_2(load_data=false, data_path="data/")
                     # Solve the IPP problem
                     val, t = @timed solve(ipp_problem, method)
                     path, objective_value = val
-                    new_data = SimulationData(sim_number=shared_idx, run_type=method, n=n, m=m, B=B, L=L, replan_rate=replan_rate, timeout=solution_time, σ_min=1e-5, σ_max=σ, objVal=objective_value, y_hist=Vector{Float64}(), lower_bound=0.0, upper_bound=0.0, path=path, drills=Vector{Int}(), Omega=ipp_problem.Graph.Omega, runtime=t)
+                    new_data = SimulationData(sim_number=shared_idx, run_type=method, n=n, m=m, B=B, L=L, replan_rate=replan_rate, timeout=solution_time, σ_min=1e-5, σ_max=σ, objVal=objective_value, y_hist=Vector{Float64}(), EI_hist=Vector{Float64}(), lower_bound=0.0, upper_bound=0.0, path=path, drills=Vector{Int}(), Omega=ipp_problem.Graph.Omega, runtime=t)
                     push!(data, new_data)
 
                     @show objective_value
@@ -324,9 +319,6 @@ function figure_3(load_data=false, data_path="data/")
             goal = n
             replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
 
-            # true map doesn't matter for non-adaptive objectives
-            true_map = rand(rng, isqrt(n), isqrt(n))
-
             # Generate a grid graph
             Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective)
 
@@ -362,7 +354,7 @@ function figure_3(load_data=false, data_path="data/")
                     # Solve the IPP problem
                     val, t = @timed solve(ipp_problem, method)
                     path, objective_value = val
-                    new_data = SimulationData(sim_number=shared_idx, run_type=method, n=n, m=m, B=B, L=L, replan_rate=replan_rate, timeout=solution_time, σ_min=1e-5, σ_max=σ, objVal=objective_value, y_hist=Vector{Float64}(), lower_bound=0.0, upper_bound=0.0, path=path, drills=Vector{Int}(), Omega=ipp_problem.Graph.Omega, runtime=t)
+                    new_data = SimulationData(sim_number=shared_idx, run_type=method, n=n, m=m, B=B, L=L, replan_rate=replan_rate, timeout=solution_time, σ_min=1e-5, σ_max=σ, objVal=objective_value, y_hist=Vector{Float64}(), EI_hist=Vector{Float64}(), lower_bound=0.0, upper_bound=0.0, path=path, drills=Vector{Int}(), Omega=ipp_problem.Graph.Omega, runtime=t)
                     push!(data, new_data)
 
                     @show objective_value
@@ -454,12 +446,133 @@ end
 #####################################################################################
 # Figure 9
 #####################################################################################
-function figure_9()
+function figure_9(load_data=false, data_path="data/")
+    """
+    Runtime and Expected Improvement adaptive objective as a function of the graph size.
+    """
+    grid_nodes = collect(123:-12:4).^2
+    num_sims = 25
+    edge_length = 1
+    L = 0.01*edge_length # length scale 
+    # NOTE: for expected improvement σ_max=1.0 is quite noisy. σ_max=0.1 is more reasonable for EI use cases
+    # for A and D-optimal σ_max=1.0 is fine since we are only focused on sensor distribution, not on the actual values received
+    σ = 0.1
+    objective = "expected_improvement" 
+    solution_time = 120.0
+    rng = MersenneTwister(12345)
+    m = 20
+    B = 4*edge_length
 
+    if load_data
+        data = JLD2.load(data_path * "figure_9.jld2", "data")
+    else
+        data = []
+        methods = [random(), ASPC(), Greedy(), mcts()]
+
+        p = Progress(length(grid_nodes)*num_sims*length(methods))
+
+        for (n_idx, n) in enumerate(grid_nodes)
+            start = 1
+            goal = n
+            replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
+
+            # Generate a grid graph
+            Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective)
+
+            for (method_idx, method) in enumerate(methods)
+                for i in 1:num_sims
+                    shared_idx = (n_idx - 1) * length(methods) * num_sims + (method_idx - 1) * num_sims + i
+                    # shared_idx = (n_idx-1)*length(methods)*num_sims + i
+                    println("##########################################################################################")
+                    println( string(shared_idx) * "/" * string(length(grid_nodes)*num_sims*length(methods)) * " grid_nodes " * string(n) * " run_type " * string(method))
+                    println("##########################################################################################")
+
+                    # Here we have to change only the Omega's 
+                    omega_x = rand(rng, m)*edge_length
+                    omega_y = rand(rng, m)*edge_length
+                    Omega = hcat(omega_x, omega_y)
+                    Graph = IPPGraph(Graph.G, Graph.start, Graph.goal, Graph.Theta, Omega, Graph.all_pairs_shortest_paths, Graph.distances, Graph.true_map, Graph.edge_length)
+
+                    # Generate a new measurement model since Omega was updated
+                    Σₓ = kernel(Graph.Omega, Graph.Omega, L) # = K(X⁺, X⁺)
+                    Σₓ = round.(Σₓ, digits=8)
+                    ϵ = Matrix{Float64}(I, size(Σₓ))*1e-6 # Add a Small Constant to the Diagonal (Jitter): This is a common technique to improve the numerical stability of a kernel matrix. 
+                    Σₓ⁻¹ = inv(Σₓ + ϵ)
+                    Σₓ⁻¹ = round.(Σₓ⁻¹, digits=8)
+                    KX⁺X = kernel(Graph.Omega, Graph.Theta, L) # = K(X⁺, X)
+                    Aᵀ = Σₓ⁻¹ * KX⁺X
+                    A = Aᵀ'
+                    A = round.(A, digits=8)
+                    measurement_model = MeasurementModel(σ, Σₓ, Σₓ⁻¹, L, A)
+
+                    # Create an IPP problem
+                    ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, solution_time, replan_rate)
+
+                    # Solve the IPP problem
+                    val, t = @timed solve(ipp_problem, method)
+                    path, objective_value, y_hist = val
+                    EI_hist = compute_obj_hist(ipp_problem, y_hist, path)
+
+                    new_data = SimulationData(sim_number=shared_idx, run_type=method, n=n, m=m, B=B, L=L, replan_rate=replan_rate, timeout=solution_time, σ_min=1e-5, σ_max=σ, objVal=objective_value, y_hist=y_hist, EI_hist=EI_hist, lower_bound=0.0, upper_bound=0.0, path=path, drills=Vector{Int}(), Omega=ipp_problem.Graph.Omega, runtime=t)
+                    push!(data, new_data)
+
+                    @show objective_value
+                    @show t
+
+                    # Plot the IPP problem
+                    plot(ipp_problem, path, objective_value, t, "figures/paper/figure_9/runs/$(typeof(method))_$(n)n_$(objective)_$(i).pdf")
+                    next!(p)
+                    sleep(0.1)
+                end
+            end
+        end
+        JLD2.save(data_path * "figure_9.jld2", "data", data)
+    end
+    # Plotting 
+    # greedy_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Greedy])
+    # aspc_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == ASPC])
+    # mcts_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == mcts])
+    # random_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == random])
+
+    # greedy_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == Greedy], (num_sims, length(greedy_xdata)))
+    # aspc_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == ASPC], (num_sims, length(aspc_xdata)))
+    # mcts_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == mcts], (num_sims, length(mcts_xdata)))
+    # random_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == random], (num_sims, length(random_xdata)))
+
+    ###################################
+    plots = []
+    Ns = unique([data[i].n for i in 1:length(data)])
+    for N in Ns
+        plot()
+
+        min_plot_length = minimum([length(data[i].EI_hist) for i in 1:length(data) if data[i].n == N])
+        for run_type in [random, Greedy, mcts, ASPC]
+            EI_hist = [data[i].EI_hist for i in 1:length(data) if typeof(data[i].run_type) == run_type && data[i].n == N]
+
+            max_length = maximum([length(EI_hist[i]) for i in 1:length(EI_hist)])
+            for i in 1:num_sims
+                while length(EI_hist[i]) != max_length
+                    push!(EI_hist[i], EI_hist[i][end])
+                end
+            end
+            mean_EI = reshape(mean(hcat(EI_hist...), dims=2), (max_length,))
+            std_err_EI = reshape(std_err(hcat(EI_hist...)', num_sims), (max_length,))
+
+            color = run_type == ASPC ? aspc_color : run_type == Excact ? exact_color : run_type == mcts ? mcts_color : run_type == random ? random_color : run_type == Greedy ? greedy_color : run_type == DuttaMIP ? mip_color : run_type == trΣ⁻¹ ? trΣ⁻¹_color : relaxed_color
+            label = run_type == ASPC ? "ASPC" : run_type == Excact ? "Exact" : run_type == mcts ? "MCTS" : run_type == random ? "Random" : run_type == Greedy ? "Greedy" : run_type == DuttaMIP ? "Dutta MIP" : run_type == trΣ⁻¹ ? "TrΣ⁻¹" : relaxed_color
+            plot!(mean_EI[1:min_plot_length] ./ N, ribbon = std_err_EI[1:min_plot_length] ./N, fillalpha = 0.2, label=label, title="N = $N", color=color, color_palette=:tab10, framestyle=:box, widen=false)
+        end
+        plt = plot!()
+        push!(plots, plt)
+    end
+    plot(plots..., layout=(2, 5), size=(2000, 900), legend=false, margin=7mm)
+   
+    savefig("figures/paper/figure_9/expected_improvement.pdf")
 end
 
 
 # figure_1(true)
 # figure_1()
-figure_2()
+# figure_2()
 # figure_3()
+figure_9()

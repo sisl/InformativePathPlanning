@@ -118,3 +118,11 @@ function expected_improvement(y_min, μ, σ)
     p_ymin = pdf(Normal(μ, σ), y_min)
     return (y_min - μ)*p_imp + (σ^2)*p_ymin
 end
+
+function compute_obj_hist(ipp_problem::IPP, y_hist, path)
+    obj_hist = zeros(length(y_hist))
+    for i in 1:length(y_hist)
+        obj_hist[i] = objective(ipp_problem, path[1:i], y_hist[1:i])
+    end
+    return obj_hist
+end

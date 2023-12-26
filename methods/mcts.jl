@@ -253,7 +253,11 @@ function solve(ipp_problem::IPP, method::mcts, run_random=false)
 
     path, y_hist = mcts_path(ipp_problem, rng, G, n, m, L, Omega, Theta, B, σ_max, σ_min, all_pairs_shortest_paths, run_mcts, run_random, timeout, m_func, number_of_sample_types, rollout_depth, rollout_iterations, obj, true_map, sample_cost, edge_length)
 
-    return path, objective(ipp_problem, path, y_hist)
+    if ipp_problem.objective == "expected_improvement"
+        return path, objective(ipp_problem, path, y_hist), y_hist
+    else
+        return path, objective(ipp_problem, path, y_hist)
+    end
 end
 
 function solve(ipp_problem::IPP, method::random)
