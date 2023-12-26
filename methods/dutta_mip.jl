@@ -10,7 +10,7 @@ function scale(n::Int, lower::Int, upper::Int)
     return round(Int, r)
 end
 
-function compute_mip_path(n::Int, G::Vector{Any}, z, start::Int, end_idx::Int, dist::Matrix{Float64})
+function compute_mip_path(n::Int, G::Vector{Vector{Int64}}, z, start::Int, end_idx::Int, dist::Matrix{Float64})
     v1 = start
     soln = [v1]
     while v1 != end_idx

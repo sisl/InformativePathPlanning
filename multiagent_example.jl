@@ -5,6 +5,7 @@ function run_simple_example()
     rng = MersenneTwister(123456)
 
     plot_gif = true
+    obstacles = true
     M = 3 # number of agents 
     n = 20^2
     m = 20
@@ -18,7 +19,11 @@ function run_simple_example()
     true_map = rand(rng, isqrt(n), isqrt(n))
 
     # Generate a grid graph
-    Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective)
+    if obstacles
+        Graph, centers, radii = build_graph(rng, data_path, n, m, edge_length, start, goal, objective, 1, obstacles)
+    else
+        Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective, 1, obstacles)
+    end
 
     # Generate a measurement model
     σ = 1.0
@@ -40,9 +45,8 @@ function run_simple_example()
     mipp = MultiagentIPP(ipp_problem, M)
 
     # Solve the IPP problem
-    paths, t = @timed solve(mipp, ASPC(), plot_gif)
+    paths, t = @timed solve(mipp, ASPC(), plot_gif, centers, radii)
     # path, objective_value = val
-
 
     # @show relax(ipp_problem)
 

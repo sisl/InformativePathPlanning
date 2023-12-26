@@ -27,7 +27,7 @@ struct random <: SolutionMethod end
 struct DuttaMIP <: SolutionMethod end
 
 @with_kw struct IPPGraph
-    G::Vector{Any}                                                          # G[i] returns the neighbors of node i
+    G::Vector{Vector{Int64}}                                                          # G[i] returns the neighbors of node i
     start::Int                                                              # start node
     goal::Int                                                               # goal node
     Theta::Matrix{Float64}                                                  # location of the graph nodes

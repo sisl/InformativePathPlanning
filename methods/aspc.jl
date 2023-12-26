@@ -12,7 +12,7 @@ function estimate_rewards(ipp_problem::IPP, gp::AbstractGPs.PosteriorGP, path::V
     Ω = [ipp_problem.Graph.Omega[i, :] for i in 1:size(ipp_problem.Graph.Omega, 1)]
 
     for i in 1:n
-        if i ∈ path
+        if i ∈ path || ipp_problem.Graph.G[i] == [] # second part is in the case of obstacles in the graph 
             continue
         end
 
@@ -240,7 +240,7 @@ function solve(mipp::MultiagentIPP, method::ASPC)
 end
 
 
-function solve(mipp::MultiagentIPP, method::ASPC, plot_gif=false)
+function solve(mipp::MultiagentIPP, method::ASPC, plot_gif=false, centers=[], radii=[])
     """
     Takes in MultiagentIPP problem definition and returns the M paths and the objective value
     using the solution method specified by method.
@@ -257,10 +257,10 @@ function solve(mipp::MultiagentIPP, method::ASPC, plot_gif=false)
         # set up logging of path history
         paths_hist = Vector{Vector{Vector{Int64}}}([[] for _ in 1:mipp.M])
         planned_paths_hist = Vector{Vector{Vector{Int64}}}([[] for _ in 1:mipp.M])
-        gp_hist = Vector{AbstractGPs.PosteriorGP}() #Vector{AbstractGPs.PosteriorGP}([[] for _ in 1:mipp.M])
+        gp_hist = Vector{AbstractGPs.PosteriorGP}()
     end
 
-    while all([paths[i][end] for i in 1:mipp.M] .!= ipp_problem.Graph.goal) && time_left > 0 && !all(termination_flags)
+    while any([paths[i][end] for i in 1:mipp.M] .!= ipp_problem.Graph.goal) && time_left > 0 && !all(termination_flags)
         planning_gp = deepcopy(gp)
         for i in 1:mipp.M
             if termination_flags[i]
@@ -317,10 +317,10 @@ function solve(mipp::MultiagentIPP, method::ASPC, plot_gif=false)
     end
 
     if plot_gif
-        plot(mipp, paths_hist, planned_paths_hist, gp_hist)
+        plot(mipp, paths_hist, planned_paths_hist, gp_hist, centers, radii)
         JLD2.save("data/mipp_gif_paths_hist.jld2", "paths_hist", paths_hist)
         JLD2.save("data/mipp_gif_paths_hist.jld2", "planned_paths_hist", planned_paths_hist)
     end
 
-    return paths#, objective(ipp_problem, paths, y_hist)
+    return paths
 end

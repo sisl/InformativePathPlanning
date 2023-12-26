@@ -28,7 +28,7 @@ end
 
 @with_kw mutable struct RoverPOMDP <: POMDP{RoverState, Any, Float64} # POMDP{State, Action, Observation}
     ipp_problem::IPP
-    G::Vector{Any}
+    G::Vector{Vector{Int64}}
     all_pairs_shortest_paths::Graphs.FloydWarshallState{Float64, Int64}
     Theta::Matrix{Float64}
     true_map::Matrix{Float64}

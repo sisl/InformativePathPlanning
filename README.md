@@ -34,3 +34,10 @@ To reproduce the figures from the paper:
 julia> include("run_paper_experiments.jl")
 julia> figure_1()
 ```
+
+# Examples
+Multiagent 
+
+<p align="center">
+  <img alt="Variance" src="https://github.com/josh0tt/InformativePathPlanning/blob/main/img/multiagent.gif" width="100%">
+</p>

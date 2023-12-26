@@ -24,8 +24,10 @@ function Plots.plot(ipp_problem::IPP, path::Vector{Int}, objVal::Float64, runtim
     savefig(figure_path)
 end
 
-function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist)
+function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist, centers, radii)
     planning_steps = length(gp_hist)
+    n = mipp.ipp_problem.n
+    n_sqrt = isqrt(n)
 
     Theta = mipp.ipp_problem.Graph.Theta
     L = mipp.ipp_problem.MeasurementModel.L
@@ -45,6 +47,21 @@ function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist
         post_gp = gp_hist[i]
         fxs = var(post_gp(Ω))
         heatmap(collect(plot_scale), collect(plot_scale), reshape(fxs, plot_size...), c = cgrad(:inferno, rev = false), xaxis=false, yaxis=false, legend=false, grid=false, clim=(0,1))
+
+        G = mipp.ipp_problem.Graph.G
+        nodes_in_new_G = [G[i] for i in 1:length(G)]
+        nodes_in_new_G = unique(vcat(nodes_in_new_G...))
+        # scatter!([Theta[i, 2] for i in nodes_in_new_G], [Theta[i, 1] for i in nodes_in_new_G])
+
+        # plot obstacles using centers and radii
+        # for j in 1:size(centers)[1]
+        #     x = centers[j, 1] ./ n_sqrt
+        #     y = centers[j, 2] ./ n_sqrt
+        #     r = radii[j] ./ n_sqrt
+        #     plot!((x .+ r*cos.(range(0, 2*pi, length=100))), (y .+ r*sin.(range(0, 2*pi, length=100))), color=:black, linewidth=3, label="Obstacle")
+        # end
+        nodes_in_obstacles = [i for i in 1:n if i ∉ nodes_in_new_G]
+        scatter!([Theta[i, 2] for i in nodes_in_obstacles], [Theta[i, 1] for i in nodes_in_obstacles], color=:black, label="Obstacle", markersize=6)
 
         for j in 1:mipp.M
             if i > length(paths_hist[j])

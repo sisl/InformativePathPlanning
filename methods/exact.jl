@@ -1,4 +1,4 @@
-function extract_path(ipp_problem::IPP, G::Vector{Any}, optimal_z_greedy, optimal_u_greedy, start::Int, goal::Int, all_pairs_shortest_paths::Graphs.FloydWarshallState{Float64, Int64}, dist::Matrix{Float64}, B::Int64)
+function extract_path(ipp_problem::IPP, G::Vector{Vector{Int64}}, optimal_z_greedy, optimal_u_greedy, start::Int, goal::Int, all_pairs_shortest_paths::Graphs.FloydWarshallState{Float64, Int64}, dist::Matrix{Float64}, B::Int64)
     # for extracting the path from exact solutions, we rely on optimal_u since this already tells us the ordering information of nodes
     # for relaxed methods, we look at the flow of the edges to determine the ordering since the u is not guaranteed to be ordered due to relaxed z 
     pos = start

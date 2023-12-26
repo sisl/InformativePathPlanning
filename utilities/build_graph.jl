@@ -1,4 +1,4 @@
-function build_graph(rng, data_path::String, n::Int, m::Int, edge_length::Int, start::Int, goal::Int, objective::String, i::Int=1)
+function build_graph(rng, data_path::String, n::Int, m::Int, edge_length::Int, start::Int, goal::Int, objective::String, i::Int=1, obstacles::Bool=false)
     G, Theta, Omega = build_G_Theta_Omega(rng, n, m, edge_length)
     dist = pairwise(Euclidean(), Theta', dims=2)
 
@@ -30,10 +30,63 @@ function build_graph(rng, data_path::String, n::Int, m::Int, edge_length::Int, s
         true_map = rand(rng, isqrt(n), isqrt(n))
     end
 
-    return IPPGraph(G, start, goal, Theta, Omega, all_pairs_shortest_paths, dist, true_map, edge_length)
+    ipp_graph = IPPGraph(G, start, goal, Theta, Omega, all_pairs_shortest_paths, dist, true_map, edge_length)
+    if obstacles
+        return remove_obstacles(rng, n, ipp_graph)
+    else
+        return ipp_graph
+    end
 end
 
-function build_graph(G::Vector{Any}, n::Int, Theta::Matrix{Float64})
+function remove_obstacles(rng, n::Int, ipp_graph::IPPGraph)
+    n_sqrt = isqrt(n)
+    edge_length = ipp_graph.edge_length
+
+    # generate k random circular obstacle centers
+    k = 5
+    centers = rand(rng, 2:(n_sqrt-1), k, 2)
+    radii = rand(rng, 1:round(Int, n_sqrt/7), k)
+
+    new_G = deepcopy(ipp_graph.G)#fill(Vector{Int64}(), n)
+    nodes_in_obstacles = []
+    for i in 1:n_sqrt
+        for j in 1:n_sqrt
+            if all([(i-centers[k,1])^2 + (j-centers[k,2])^2 > radii[k]^2 for k in 1:k])
+                continue
+            else
+                push!(nodes_in_obstacles, (i-1)*n_sqrt + j)
+            end
+        end
+    end
+    nodes_in_obstacles = unique(nodes_in_obstacles)
+
+    for i in 1:n
+        if i in nodes_in_obstacles
+            new_G[i] = []
+        else
+            filter!(x -> x ∉ nodes_in_obstacles, new_G[i])
+        end
+    end
+        
+    graph = build_graph(new_G, n, ipp_graph.Theta)
+    new_all_pairs_shortest_paths = Graphs.floyd_warshall_shortest_paths(graph)
+
+    plot()
+    nodes_in_new_G = [new_G[i] for i in 1:length(new_G)]
+    nodes_in_new_G = unique(vcat(nodes_in_new_G...))
+    Theta = ipp_graph.Theta
+    scatter!([Theta[i, 1] for i in nodes_in_new_G], [Theta[i, 2] for i in nodes_in_new_G])
+    scatter!([Theta[i, 1] for i in nodes_in_obstacles], [Theta[i, 2] for i in nodes_in_obstacles], color=:red)
+
+    savefig("/Users/joshuaott/Desktop/obstacles.png")
+    sp = shortest_path(new_all_pairs_shortest_paths, 1, n)
+    plot!(Theta[sp, 1], Theta[sp, 2], color=:red, linewidth=3)
+    savefig("/Users/joshuaott/Desktop/obstacles.png")
+
+    return IPPGraph(new_G, ipp_graph.start, ipp_graph.goal, ipp_graph.Theta, ipp_graph.Omega, new_all_pairs_shortest_paths, ipp_graph.distances, ipp_graph.true_map, edge_length), centers, radii
+end
+
+function build_graph(G::Vector{Vector{Int64}}, n::Int, Theta::Matrix{Float64})
     idx = []
     for (v1, edges) in collect(enumerate(G))
         for v2 in edges
@@ -89,9 +142,9 @@ end
 
 function adjList(n::Int)
     n_sqrt = trunc(Int, sqrt(n))
-    adj = []
+    adj = Vector{Vector{Int64}}()
     for v in 0:(n-1)
-        edges = []
+        edges = Vector{Int64}()
         y, x = divrem(v, n_sqrt)
 
         # correct for python 0 indexing 
