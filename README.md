@@ -39,5 +39,5 @@ julia> figure_1()
 Multiagent 
 
 <p align="center">
-  <img alt="Variance" src="https://github.com/josh0tt/InformativePathPlanning/blob/main/img/multiagent.gif" width="100%">
+  <img alt="Variance" src="https://github.com/josh0tt/InformativePathPlanning/blob/main/img/multiagent.gif" width="75%">
 </p>
