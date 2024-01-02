@@ -27,7 +27,7 @@ struct random <: SolutionMethod end
 struct DuttaMIP <: SolutionMethod end
 
 @with_kw struct IPPGraph
-    G::Vector{Vector{Int64}}                                                          # G[i] returns the neighbors of node i
+    G::Vector{Vector{Int64}}                                                # G[i] returns the neighbors of node i
     start::Int                                                              # start node
     goal::Int                                                               # goal node
     Theta::Matrix{Float64}                                                  # location of the graph nodes
@@ -43,7 +43,7 @@ end
     Σₓ::Matrix{Float64}                                                     # prior covariance matrix
     Σₓ⁻¹::Matrix{Float64}                                                   # inverse of prior covariance matrix 
     L::Float64                                                              # length scale used in the kernel to build the covariance matrix
-    A::Matrix{Float64}                                                          # meaurement n x m characterization matrix 
+    A::Matrix{Float64}                                                      # meaurement n x m characterization matrix 
 end
 
 @with_kw struct IPP
@@ -63,6 +63,13 @@ end
     M::Int                                                                  # Number of agents
 end
 
+@with_kw struct MultimodalIPP
+    ipp_problem::IPP                                                        # IPP problem
+    σ_min::Float64                                                          # highest quality sensor
+    σ_max::Float64                                                          # lowest quality sensor
+    k::Int                                                                  # number of sensor types 
+end
+
 include("utilities/build_graph.jl")
 include("utilities/utilities.jl")
 include("methods/ASPC.jl")
@@ -77,6 +84,29 @@ function solve(ipp_problem::MultiagentIPP)
     Takes in MultiagentIPP problem definition and returns M paths and the objective value.
     """
     return solve(ipp_problem, ASPC())
+end
+
+function solve(ipp_problem::MultimodalIPP)
+    """ 
+    Takes in MultimodalIPP problem definition and returns path and the objective value.
+    """
+    return solve(ipp_problem, ASPC())
+end
+
+function solve(ipp_problem::MultimodalIPP, method::SolutionMethod)
+    """ 
+    Takes in MultimodalIPP problem definition and returns the path and objective value
+    using the solution method specified by method.
+    """
+
+    path, objVal = solve(mmipp.ipp_problem, method)
+
+    if ipp_problem.objective ∉ ["A-IPP", "D-IPP"]
+        @error("You tried to run multimodal sensing for an objective that is not implemented")
+    else
+        drills, drill_time = @timed (mmipp.ipp_problem.objective == "A-IPP" ? run_a_optimal_sensor_selection(unique(path) ) : run_d_optimal_sensor_selection(unique(path), ))
+    end
+    
 end
 
 function solve(ipp_problem::IPP)

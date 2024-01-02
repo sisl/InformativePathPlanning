@@ -33,7 +33,7 @@ function initialize_gp(ipp_problem::IPP)
     X = [x[i, :] for i in 1:size(x, 1)]
     y = ipp_problem.Graph.true_map[path] + [rand(ipp_problem.rng, Normal(0, ipp_problem.MeasurementModel.σ))]
     y_hist = y
-    gp = AbstractGPs.posterior(gp(X, ipp_problem.MeasurementModel.σ), y)
+    gp = AbstractGPs.posterior(gp(X, ipp_problem.MeasurementModel.σ^2), y)
     return gp, y_hist
 end
 
@@ -41,8 +41,9 @@ function update_gp(ipp_problem::IPP, gp::AbstractGPs.PosteriorGP, y_hist, planne
     x = ipp_problem.Graph.Theta[planned_path, :]
     X = [x[i, :] for i in 1:size(x, 1)]
     
-    y = ipp_problem.Graph.true_map[planned_path] + rand(ipp_problem.rng, MvNormal(zeros(length(planned_path)), Diagonal(ones(length(planned_path)).*ipp_problem.MeasurementModel.σ)) )
-    gp = AbstractGPs.posterior(gp(X, ipp_problem.MeasurementModel.σ), y)
+    # y = ipp_problem.Graph.true_map[planned_path] + rand(ipp_problem.rng, MvNormal(zeros(length(planned_path)), Diagonal(ones(length(planned_path)).*ipp_problem.MeasurementModel.σ^2)) )
+    y = ipp_problem.Graph.true_map[planned_path] + [rand(ipp_problem.rng, Normal(0, ipp_problem.MeasurementModel.σ)) for i in 1:length(planned_path)]
+    gp = AbstractGPs.posterior(gp(X, ipp_problem.MeasurementModel.σ^2), y)
     y_hist = vcat(y_hist, y...)
 
     return gp, y_hist
@@ -72,7 +73,7 @@ function objective(ipp_problem::IPP, path::Vector{Int64}, y_hist::Vector{Float64
         return logdet(cov(post_gp(Ω)))
     elseif ipp_problem.objective == "expected_improvement"
         # want to go where EI is highest (where -EI is lowest)
-        Ω = [ipp_problem.Graph.Theta[i, :] for i in 1:size(ipp_problem.Graph.Theta, 1)]
+        # Ω = [ipp_problem.Graph.Theta[i, :] for i in 1:size(ipp_problem.Graph.Theta, 1)]
         y_min = minimum(y_hist)
 
         σ = sqrt.(var(post_gp(Ω)))
@@ -81,7 +82,7 @@ function objective(ipp_problem::IPP, path::Vector{Int64}, y_hist::Vector{Float64
         return sum(EI)
     elseif ipp_problem.objective == "lower_confidence_bound"
         # want to go where μ - α*σ is lowest
-        Ω = [ipp_problem.Graph.Theta[i, :] for i in 1:size(ipp_problem.Graph.Theta, 1)]
+        # Ω = [ipp_problem.Graph.Theta[i, :] for i in 1:size(ipp_problem.Graph.Theta, 1)]
 
         σ = sqrt.(var(post_gp(Ω)))
         μ = mean(post_gp(Ω))

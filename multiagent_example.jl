@@ -1,6 +1,6 @@
 include("IPP.jl")
 
-function run_simple_example()
+function run_multiagent_example()
     data_path = "/Users/joshuaott/InformativePathPlanning/data/"
     rng = MersenneTwister(123456)
 
@@ -46,13 +46,6 @@ function run_simple_example()
 
     # Solve the IPP problem
     paths, t = @timed solve(mipp, ASPC(), plot_gif, centers, radii)
-    # path, objective_value = val
-
-    # @show relax(ipp_problem)
-
-    # Plot the IPP problem
-    # plot(ipp_problem, path, objective_value, t)
-
 end
 
-run_simple_example()
+run_multiagent_example()

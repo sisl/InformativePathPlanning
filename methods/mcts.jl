@@ -195,7 +195,7 @@ function mcts_path(ipp_problem, rng, G, N, M, L, Omega, Theta, B, σ_max, σ_min
 		x = Theta[[pos], :]
 		X = [x[i, :] for i in 1:size(x, 1)]
 		y = true_map[[pos]] + [rand(rng, Normal(0, σ_max))]
-		f_init = AbstractGPs.posterior(gp(X, σ_max), y)
+		f_init = AbstractGPs.posterior(gp(X, σ_max^2), y)
 	end
 
 	#########################################################################################

@@ -28,7 +28,7 @@ function estimate_rewards(ipp_problem::IPP, gp::AbstractGPs.PosteriorGP, path::V
             X = [x[i, :] for i in 1:size(x, 1)]
             # use gp mean to predict value of candidate point
             y = mean(gp([ipp_problem.Graph.Theta[i, :]]))
-            post_gp = AbstractGPs.posterior(gp(X, ipp_problem.MeasurementModel.σ), y)
+            post_gp = AbstractGPs.posterior(gp(X, ipp_problem.MeasurementModel.σ^2), y)
             if ipp_problem.objective == "A-IPP"
                 # NOTE: this uses post_gp and not gp since we're asking what is the variance at the prediction points IF we vist the candidate point?
                 # we want to minimize variance, so we want to go to locations that have greater (less negative) -sum(variance)
@@ -137,9 +137,9 @@ function action(ipp_problem::IPP, method::ASPC, gp::AbstractGPs.PosteriorGP, exe
     steps_remaining = round(Int, budget_remaining*(n_sqrt-1)/ipp_problem.Graph.edge_length)
 
     # find the nearest even number of steps remaining
-    if steps_remaining % 2 != 0
-        steps_remaining += 1
-    end
+    # if steps_remaining % 2 != 0
+    #     steps_remaining += 1
+    # end
 
     val, t = @timed solve_dp_orienteering(rewards, pos, ipp_problem.Graph.goal, steps_remaining)
     path_value, planned_path = val
@@ -184,50 +184,6 @@ function solve(ipp_problem::IPP, method::ASPC)
             gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:(2+ipp_problem.replan_rate-1)])
             prev_planned_path = planned_path[(2+ipp_problem.replan_rate-1):end]
         end    
-    end
-
-    if path[end] != ipp_problem.Graph.goal
-        sp_to_goal = shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, path[end], ipp_problem.Graph.goal)[2:end]
-        push!(path, sp_to_goal...)
-        gp, y_hist = update_gp(ipp_problem, gp, y_hist, sp_to_goal)
-    end
-
-    return path, objective(ipp_problem, path, y_hist)
-end
-
-function solve(mipp::MultiagentIPP, method::ASPC)
-    """ 
-    Takes in MultiagentIPP problem definition and returns the M paths and the objective value
-    using the solution method specified by method.
-    """
-
-    paths = Vector{Vector{Int64}}([[mipp.ipp_problem.Graph.start] for _ in 1:mipp.M])
-    true_gp, y_hist = initialize_gp(ipp_problem)
-    time_left = ipp_problem.solution_time
-    prev_planned_paths = [shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, path[end], ipp_problem.Graph.goal) for _ in 1:mipp.M]
-
-    while all([paths[i][end] for i in 1:mipp.M] .!= ipp_problem.Graph.goal) && time_left > 0
-        planning_gp = deepcopy(true_gp)
-        for i in 1:mipp.M
-            planned_path, planning_time = @timed action(ipp_problem, method, gp, path, y_hist)
-            time_left -= planning_time
-    
-            if planned_path == Vector{Int64}()
-                # if no solution was found then use the previous solution
-                planned_path = prev_planned_paths[i]
-            end
-    
-            if length(planned_path[(2+ipp_problem.replan_rate):end]) <= ipp_problem.replan_rate
-                # this is our last path since we're within the replan rate of the goal
-                push!(paths[i], planned_path[2:end]...)
-                gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:end])
-                continue
-            else
-                push!(paths[i], planned_path[2:(2+ipp_problem.replan_rate-1)]...)
-                gp, y_hist = update_gp(ipp_problem, gp, y_hist, planned_path[2:(2+ipp_problem.replan_rate-1)])
-                prev_planned_path = planned_path[(2+ipp_problem.replan_rate-1):end]
-            end    
-        end
     end
 
     if path[end] != ipp_problem.Graph.goal
@@ -326,5 +282,5 @@ function solve(mipp::MultiagentIPP, method::ASPC, plot_gif=false, centers=[], ra
         JLD2.save("data/mipp_gif_paths_hist.jld2", "planned_paths_hist", planned_paths_hist)
     end
 
-    return paths
+    return paths#, objective(ipp_problem, paths, y_hist)
 end

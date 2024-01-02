@@ -9,7 +9,7 @@ function greedy_reward(ipp_problem::IPP, gp::AbstractGPs.PosteriorGP, candidate_
     y = mean(gp([Theta[candidate_point, :]]))[1]
 
     y_min = minimum(y_hist)
-    post_gp = AbstractGPs.posterior(gp(X, ipp_problem.MeasurementModel.σ), [y])
+    post_gp = AbstractGPs.posterior(gp(X, ipp_problem.MeasurementModel.σ^2), [y])
     
     if objective == "A-IPP"
         # NOTE: this uses post_gp and not gp since we're asking what is the variance at the prediction points IF we vist the candidate point?
@@ -53,7 +53,6 @@ function action(ipp_problem::IPP, method::Greedy, gp::AbstractGPs.PosteriorGP, e
         path_to_node = vcat(vcat(executed_path[1:end-1], shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, executed_path[end], candidate_point)), shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, candidate_point, ipp_problem.Graph.goal)[2:end])
 
         # check if node is reachable
-        # @show path_distance(ipp_problem, path_to_node)
         if round(path_distance(ipp_problem, path_to_node), digits=5) <= ipp_problem.B
             can_fxs = greedy_reward(ipp_problem, gp, candidate_point, Ω, y_hist)
 
