@@ -78,6 +78,7 @@ include("methods/exact.jl")
 include("methods/dutta_mip.jl")
 include("methods/mcts.jl")
 include("utilities/plotting.jl")
+include("multimodal_sensor_selection.jl")
 
 function solve(ipp_problem::MultiagentIPP)
     """ 
@@ -93,7 +94,7 @@ function solve(ipp_problem::MultimodalIPP)
     return solve(ipp_problem, ASPC())
 end
 
-function solve(ipp_problem::MultimodalIPP, method::SolutionMethod)
+function solve(mmipp::MultimodalIPP, method::SolutionMethod)
     """ 
     Takes in MultimodalIPP problem definition and returns the path and objective value
     using the solution method specified by method.
@@ -101,12 +102,13 @@ function solve(ipp_problem::MultimodalIPP, method::SolutionMethod)
 
     path, objVal = solve(mmipp.ipp_problem, method)
 
-    if ipp_problem.objective ∉ ["A-IPP", "D-IPP"]
+    if mmipp.ipp_problem.objective ∉ ["A-IPP", "D-IPP"]
         @error("You tried to run multimodal sensing for an objective that is not implemented")
     else
-        drills, drill_time = @timed (mmipp.ipp_problem.objective == "A-IPP" ? run_a_optimal_sensor_selection(unique(path) ) : run_d_optimal_sensor_selection(unique(path), ))
+        drills, drill_time = @timed (mmipp.ipp_problem.objective == "A-IPP" ? run_a_optimal_sensor_selection(mmipp, unique(path)) : run_d_optimal_sensor_selection(mmipp, unique(path)))
     end
-    
+
+    return path, drills, objVal
 end
 
 function solve(ipp_problem::IPP)

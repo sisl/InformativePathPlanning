@@ -425,14 +425,145 @@ end
 #####################################################################################
 # Figure 5
 #####################################################################################
-function figure_5()
-
+struct Fig5Data
+    sim_data::SimulationData
+    mcts_drills::Vector{Int64}
+    mcts_objective::Float64
+    cvx_drills::Vector{Int64}
+    cvx_objective::Float64
 end
+
+function figure_5(load_data=false, data_path="data/")
+    """
+    Multimodal sensing comparison between MCTS and proposed approach.
+    """
+    grid_nodes = collect(123:-12:4).^2
+    num_sims = 25
+    edge_length = 1
+    L = 0.01*edge_length # length scale 
+    σ = 1.0
+    obj = "D-IPP" 
+    solution_time = 120.0
+    rng = MersenneTwister(12345)
+    m = 20
+    B = 4*edge_length
+
+    if load_data
+        data = JLD2.load(data_path * "figure_5.jld2", "data")
+    else
+        data = []
+        methods = [mcts()]
+
+        p = Progress(length(grid_nodes)*num_sims*length(methods))
+
+        for (n_idx, n) in enumerate(grid_nodes)
+            start = 1
+            goal = n
+            replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
+
+            # Generate a grid graph
+            Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, obj)
+
+            for (method_idx, method) in enumerate(methods)
+                for i in 1:num_sims
+                    shared_idx = (n_idx - 1) * length(methods) * num_sims + (method_idx - 1) * num_sims + i
+                    # shared_idx = (n_idx-1)*length(methods)*num_sims + i
+                    println("##########################################################################################")
+                    println( string(shared_idx) * "/" * string(length(grid_nodes)*num_sims*length(methods)) * " grid_nodes " * string(n) * " run_type " * string(method))
+                    println("##########################################################################################")
+
+                    # Here we have to change only the Omega's 
+                    omega_x = rand(rng, m)*edge_length
+                    omega_y = rand(rng, m)*edge_length
+                    Omega = hcat(omega_x, omega_y)
+                    Graph = IPPGraph(Graph.G, Graph.start, Graph.goal, Graph.Theta, Omega, Graph.all_pairs_shortest_paths, Graph.distances, Graph.true_map, Graph.edge_length)
+
+                    # Generate a new measurement model since Omega was updated
+                    Σₓ = kernel(Graph.Omega, Graph.Omega, L) # = K(X⁺, X⁺)
+                    Σₓ = round.(Σₓ, digits=8)
+                    ϵ = Matrix{Float64}(I, size(Σₓ))*1e-6 # Add a Small Constant to the Diagonal (Jitter): This is a common technique to improve the numerical stability of a kernel matrix. 
+                    Σₓ⁻¹ = inv(Σₓ + ϵ)
+                    Σₓ⁻¹ = round.(Σₓ⁻¹, digits=8)
+                    KX⁺X = kernel(Graph.Omega, Graph.Theta, L) # = K(X⁺, X)
+                    Aᵀ = Σₓ⁻¹ * KX⁺X
+                    A = Aᵀ'
+                    A = round.(A, digits=8)
+                    measurement_model = MeasurementModel(σ, Σₓ, Σₓ⁻¹, L, A)
+
+                    # Multimodal Sensing
+                    σ_max = σ
+                    σ_min = 1e-5
+                    k = 3
+
+                    # Create an IPP problem
+                    ipp_problem = IPP(rng, n, m, Graph, measurement_model, obj, B, solution_time, replan_rate)
+                    mmipp = MultimodalIPP(ipp_problem, σ_min, σ_max, k)
+
+                    # Solve the IPP problem
+                    val, t = @timed solve(mmipp, mcts())
+                    path, objective_value, drills = val
+                    y_hist = zeros(length(path)) # y_hist is not used for A-IPP or D-IPP
+
+                    objective_value = objective(mmipp, path, y_hist, drills)
+
+                    sim_data = SimulationData(sim_number=shared_idx, run_type=method, n=n, m=m, B=B, L=L, replan_rate=replan_rate, timeout=solution_time, σ_min=σ_min, σ_max=σ_max, objVal=objective_value, y_hist=Vector{Float64}(), EI_hist=Vector{Float64}(), lower_bound=0.0, upper_bound=0.0, path=path, drills=Vector{Int}(), Omega=ipp_problem.Graph.Omega, runtime=t)
+                    mcts_drills = deepcopy(drills)
+                    mcts_objective = deepcopy(objective_value)
+
+                    # Now run cvx drill selection
+                    if obj == "A-IPP"
+                        cvx_drills = run_a_optimal_sensor_selection(mmipp, unique(path))
+                    elseif obj == "D-IPP"
+                        cvx_drills = run_d_optimal_sensor_selection(mmipp, unique(path))
+                    else
+                        @error("Objective not supported")
+                    end
+                    cvx_objective = objective(mmipp, path, y_hist, cvx_drills)
+                    new_data = Fig5Data(sim_data, mcts_drills, mcts_objective, cvx_drills, cvx_objective)
+                    push!(data, new_data)
+
+                    @show mcts_objective
+                    @show cvx_objective
+                    @show t
+
+                    # Plot the IPP problem
+                    plot(mmipp, path, mcts_drills, cvx_drills, objective_value, t, "figures/paper/figure_5/$(obj)_runs/$(typeof(method))_$(n)n_$(obj)_$(i).pdf")
+                    next!(p)
+                    sleep(0.1)
+                end
+            end
+        end
+        JLD2.save(data_path * "figure_5.jld2", "data", data)
+    end
+
+    # Plotting
+    xdata = unique([data[i].sim_data.n for i in 1:length(data)])
+    mcts_mean_obj_hist = []
+    mcts_std_err_obj_hist = []
+    cvx_mean_obj_hist = []
+    cvx_std_err_obj_hist = []
+
+    for n in x_data
+        mcts_objectives = [data[i].mcts_objective for i in 1:length(data) if data[i].sim_data.n == n]
+        cvx_objectives = [data[i].cvx_objective for i in 1:length(data) if data[i].sim_data.n == n]
+        push!(mcts_mean_obj_hist, mean(mcts_objectives))
+        push!(mcts_std_err_obj_hist, std_err(mcts_objectives, num_sims))
+        push!(cvx_mean_obj_hist, mean(cvx_objectives))
+        push!(cvx_std_err_obj_hist, std_err(cvx_objectives, num_sims))
+    end
+
+    title = objective == "A-IPP" ? "tr(Σ) vs. Graph Size" : "logdet(Σ) vs. Graph Size"
+    plot(xdata, mcts_mean_obj_hist, ribbon = mcts_std_err_obj_hist, fillalpha = 0.2, label="MCTS", title=title, color=mcts_color, color_palette=:tab10, framestyle=:box)
+    plot!(xdata, cvx_mean_obj_hist, ribbon = cvx_std_err_obj_hist, fillalpha = 0.2, label="Convex", title=title, color=cocp_color, color_palette=:tab10, framestyle=:box, legend=false, widen=false, size=(600,500), margin=5mm, xticks=[0.0, 5e3, 10e3, 15e3])
+    savefig("figures/paper/figure_5/$(objective)_cvx_drill_placement.pdf")
+end 
+
 
 #####################################################################################
 # Figure 6
 #####################################################################################
 function figure_6()
+
 
 end
 
@@ -566,4 +697,5 @@ end
 # figure_1()
 # figure_2()
 # figure_3()
-figure_9(true)
+figure_5()
+# figure_9(true)

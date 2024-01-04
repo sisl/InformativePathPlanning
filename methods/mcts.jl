@@ -169,7 +169,7 @@ function random_policy(pomdp, b)
 	return rand(pomdp.rng, possible_actions)
 end
 
-function mcts_path(ipp_problem, rng, G, N, M, L, Omega, Theta, B, σ_max, σ_min, all_pairs_shortest_paths, run_mcts, run_random, timeout, m_func, number_of_sample_types, rollout_depth, rollout_iterations, objective, true_map::Matrix{Float64}, sample_cost, edge_length)
+function mcts_path(ipp_problem, rng, G, N, M, L, Omega, Theta, B, σ_max, σ_min, all_pairs_shortest_paths, run_mcts, run_random, timeout, m_func, number_of_sample_types, rollout_depth, rollout_iterations, objective, true_map::Matrix{Float64}, sample_cost, edge_length, multimodal_sensing::Bool)
 	n = isqrt(N)
 	Ω = [Omega[i, :] for i in 1:size(Omega, 1)]
 
@@ -200,7 +200,7 @@ function mcts_path(ipp_problem, rng, G, N, M, L, Omega, Theta, B, σ_max, σ_min
 
 	#########################################################################################
 	pomdp_budget = round(Int, B*(n-1)/edge_length) + 1 # NOTE: this is converting the distance based budget B into a counter budget (counts number of steps taken on the graph as an int to avoid floating point errors)
-	pomdp = RoverPOMDP(ipp_problem=ipp_problem, G=G, all_pairs_shortest_paths=all_pairs_shortest_paths, Theta=Theta, true_map=true_map, f_prior=f_init, Ω=Ω, query_size=(M,1), goal_pos=N, cost_budget=pomdp_budget, sample_types= collect(0:(1/number_of_sample_types):(1-1/number_of_sample_types)), σ_max=σ_max, σ_min=σ_min, drill_time = sample_cost, rng=rng, edge_length=edge_length, objective=objective)
+	pomdp = RoverPOMDP(ipp_problem=ipp_problem, multimodal_sensing=multimodal_sensing, G=G, all_pairs_shortest_paths=all_pairs_shortest_paths, Theta=Theta, true_map=true_map, f_prior=f_init, Ω=Ω, query_size=(M,1), goal_pos=N, cost_budget=pomdp_budget, sample_types= collect(0:(1/number_of_sample_types):(1-1/number_of_sample_types)), σ_max=σ_max, σ_min=σ_min, drill_time = sample_cost, rng=rng, edge_length=edge_length, objective=objective)
 	bmdp = BeliefMDP(pomdp, RoverBeliefUpdater(pomdp), belief_reward)
 	gp_bmdp_isterminal(s) = POMDPs.isterminal(pomdp, s)
 	gp_bmdp_policy = get_gp_bmdp_policy(bmdp, rng, rollout_depth, rollout_iterations)
@@ -220,7 +220,14 @@ function mcts_path(ipp_problem, rng, G, N, M, L, Omega, Theta, B, σ_max, σ_min
 		path = state_hist
 	end
 
-	return path, y_hist
+    if multimodal_sensing
+        drills = action_hist .== :drill
+		drill_path_idx = findall(x -> x == 1, drills)
+		drills = path[drill_path_idx]
+        return path, y_hist, drills
+    else
+        return path, y_hist
+    end
 end
 
 function solve(ipp_problem::IPP, method::mcts, run_random=false)
@@ -250,8 +257,9 @@ function solve(ipp_problem::IPP, method::mcts, run_random=false)
     true_map = ipp_problem.Graph.true_map
     sample_cost = 1
     edge_length = ipp_problem.Graph.edge_length
+    multimodal_sensing = false
 
-    path, y_hist = mcts_path(ipp_problem, rng, G, n, m, L, Omega, Theta, B, σ_max, σ_min, all_pairs_shortest_paths, run_mcts, run_random, timeout, m_func, number_of_sample_types, rollout_depth, rollout_iterations, obj, true_map, sample_cost, edge_length)
+    path, y_hist = mcts_path(ipp_problem, rng, G, n, m, L, Omega, Theta, B, σ_max, σ_min, all_pairs_shortest_paths, run_mcts, run_random, timeout, m_func, number_of_sample_types, rollout_depth, rollout_iterations, obj, true_map, sample_cost, edge_length, multimodal_sensing)
 
     if ipp_problem.objective == "expected_improvement"
         return path, objective(ipp_problem, path, y_hist), y_hist
@@ -266,4 +274,51 @@ function solve(ipp_problem::IPP, method::random)
     using the solution method specified by method.
     """
     return solve(ipp_problem, mcts(), true)
+end
+
+function solve(mmipp::MultimodalIPP, method::mcts, run_random=false)
+    """ 
+    Takes in MultimodalIPP problem definition and returns the path and objective value
+    using the solution method specified by method.
+    """
+    ipp_problem = mmipp.ipp_problem
+    rng = ipp_problem.rng
+    G = ipp_problem.Graph.G
+    n = ipp_problem.n
+    m = ipp_problem.m
+    L = ipp_problem.MeasurementModel.L
+    Omega = ipp_problem.Graph.Omega
+    Theta = ipp_problem.Graph.Theta
+    B = ipp_problem.B
+    σ_max = mmipp.σ_max
+    σ_min = mmipp.σ_min
+    all_pairs_shortest_paths = ipp_problem.Graph.all_pairs_shortest_paths
+    run_mcts = run_random ? false : true
+    run_random = run_random ? true : false
+    timeout = ipp_problem.solution_time
+    m_func=(x)->0.0
+    number_of_sample_types=10
+    rollout_depth=5
+    rollout_iterations=100
+    obj = ipp_problem.objective
+    true_map = ipp_problem.Graph.true_map
+    sample_cost = 1
+    edge_length = ipp_problem.Graph.edge_length
+    multimodal_sensing = true
+
+    path, y_hist, drills = mcts_path(ipp_problem, rng, G, n, m, L, Omega, Theta, B, σ_max, σ_min, all_pairs_shortest_paths, run_mcts, run_random, timeout, m_func, number_of_sample_types, rollout_depth, rollout_iterations, obj, true_map, sample_cost, edge_length, multimodal_sensing)
+
+    if mmipp.ipp_problem.objective == "expected_improvement"
+        return path, objective(mmipp, path, y_hist, drills), y_hist, drills
+    else
+        return path, objective(mmipp, path, y_hist, drills), drills
+    end
+end
+
+function solve(mmipp::MultimodalIPP, method::random)
+    """ 
+    Takes in IPP problem definition and returns the path and objective value
+    using the solution method specified by method.
+    """
+    return solve(mmipp, mcts(), true)
 end

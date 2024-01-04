@@ -9,8 +9,11 @@ end
 
 function actions_possible_from_current(pomdp::RoverPOMDP, pos::Int, cost_expended::Int, drill_samples)
     neighbors_actions = Vector{Any}(pomdp.G[pos])
-    # Uncomment line below to allow drilling 
-    # push!(neighbors_actions, :drill)
+
+    if pomdp.multimodal_sensing
+        push!(neighbors_actions, :drill)
+    end
+
     possible_actions = [] 
 
     for n in neighbors_actions

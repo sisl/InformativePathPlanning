@@ -22,7 +22,7 @@ function run_multimodal_example()
     σ = 1.0
     σ_max = σ
     σ_min = 1e-5
-    k = 2
+    k = 3
 
     # Generate a measurement model
     L = 0.01*edge_length # length scale 
@@ -44,10 +44,10 @@ function run_multimodal_example()
 
     # Solve the IPP problem
     val, t = @timed solve(mmipp, ASPC())
-    path, objective_value = val
+    path, drills, objective_value = val
 
     # Plot the IPP problem
-    plot(ipp_problem, path, objective_value, t)
+    plot(mmipp, path, drills, objective_value, t)
 
 end
 
