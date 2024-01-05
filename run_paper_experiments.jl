@@ -580,7 +580,9 @@ function figure_6(load_data=false, data_path="data/")
     solution_time = 120.0
     rng = MersenneTwister(12345)
     m = 20
-    budgets=collect(3:4:round(Int, n / sqrt(n)))*edge_length
+    budgets=collect(4:4:round(Int, n / sqrt(n)))*edge_length
+    a_opt_plt = Nothing
+    d_opt_plt = Nothing
 
     for obj in ["A-IPP", "D-IPP"]
         if load_data
@@ -597,13 +599,13 @@ function figure_6(load_data=false, data_path="data/")
                 replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
     
                 # Generate a grid graph
-                Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective)
+                Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, obj)
 
                 for (method_idx, method) in enumerate(methods)
                     for i in 1:num_sims
                         shared_idx = (b_idx - 1) * length(methods) * num_sims + (method_idx - 1) * num_sims + i
                         println("##########################################################################################")
-                        println( string(shared_idx) * "/" * string(length(grid_nodes)*num_sims*length(methods)) * " grid_nodes " * string(n) * " run_type " * string(method))
+                        println( string(shared_idx) * "/" * string(length(budgets)*num_sims*length(methods)) * " budgets " * string(B) * " run_type " * string(method))
                         println("##########################################################################################")
     
                         # Here we have to change only the Omega's 
@@ -625,7 +627,7 @@ function figure_6(load_data=false, data_path="data/")
                         measurement_model = MeasurementModel(σ, Σₓ, Σₓ⁻¹, L, A)
     
                         # Create an IPP problem
-                        ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, solution_time, replan_rate)
+                        ipp_problem = IPP(rng, n, m, Graph, measurement_model, obj, B, solution_time, replan_rate)
     
                         # Solve the IPP problem
                         val, t = @timed solve(ipp_problem, method)
@@ -636,10 +638,12 @@ function figure_6(load_data=false, data_path="data/")
                         push!(data, new_data)
     
                         @show objective_value
+                        @show upper_bound
+                        @show lower_bound
                         @show t
     
                         # Plot the IPP problem
-                        plot(ipp_problem, path, objective_value, t, "figures/paper/figure_6/$(obj)_runs/$(typeof(method))_$(n)n_$(objective)_$(i).pdf")
+                        plot(ipp_problem, path, objective_value, t, "figures/paper/figure_6/$(obj)_runs/$(typeof(method))_$(B)B_$(i).pdf")
                         next!(p)
                         sleep(0.1)
                     end
@@ -753,7 +757,7 @@ function figure_9(load_data=false, data_path="data/")
                     # Solve the IPP problem
                     val, t = @timed solve(ipp_problem, method)
                     path, objective_value, y_hist = val
-                    EI_hist = compute_obj_hist(ipp_problem, y_hist, path)
+                    EI_hist = compute_adaptive_obj_hist(ipp_problem, y_hist, path)
 
                     new_data = SimulationData(sim_number=shared_idx, run_type=method, n=n, m=m, B=B, L=L, replan_rate=replan_rate, timeout=solution_time, σ_min=1e-5, σ_max=σ, objVal=objective_value, y_hist=y_hist, EI_hist=EI_hist, lower_bound=0.0, upper_bound=0.0, path=path, drills=Vector{Int}(), Omega=ipp_problem.Graph.Omega, runtime=t)
                     push!(data, new_data)
@@ -807,5 +811,6 @@ end
 # figure_1()
 # figure_2()
 # figure_3()
-figure_5(true)
+# figure_5(true)
+figure_6()
 # figure_9(true)

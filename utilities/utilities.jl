@@ -97,7 +97,15 @@ function objective(mmipp::MultimodalIPP, path::Vector{Int64}, y_hist::Vector{Flo
     end
 end
 
-function objective(ipp_problem::IPP, path::Vector{Int64}, y_hist::Vector{Float64})
+function adaptive_objective(ipp_problem::IPP, path::Vector{Int64}, y_hist::Vector{Float64})
+    """
+    Compute the objective function value for a given path and history of measurements. To be used 
+    for adaptive objectives where the objective depends on the measurements taken.
+    """
+    if ipp_problem.objective == "A-IPP" || ipp_problem.objective == "D-IPP"
+        @error("wrong objective function")
+    end
+
     gp = AbstractGPs.GP(with_lengthscale(SqExponentialKernel(), ipp_problem.MeasurementModel.L))
     Ω = [ipp_problem.Graph.Omega[i, :] for i in 1:size(ipp_problem.Graph.Omega, 1)]
 
@@ -114,12 +122,7 @@ function objective(ipp_problem::IPP, path::Vector{Int64}, y_hist::Vector{Float64
         post_gp = AbstractGPs.posterior(gp(X, ν), y)
     end
 
-    if ipp_problem.objective == "A-IPP"
-        variances = var(post_gp(Ω))
-        return sum(variances)
-    elseif ipp_problem.objective == "D-IPP"
-        return logdet(cov(post_gp(Ω)))
-    elseif ipp_problem.objective == "expected_improvement"
+    if ipp_problem.objective == "expected_improvement"
         # want to go where EI is highest (where -EI is lowest)
         # Ω = [ipp_problem.Graph.Theta[i, :] for i in 1:size(ipp_problem.Graph.Theta, 1)]
         y_min = minimum(y_hist)
@@ -139,22 +142,23 @@ function objective(ipp_problem::IPP, path::Vector{Int64}, y_hist::Vector{Float64
     end
 end
 
-function objective(ipp_problem::IPP, path::Vector{Int64})
-    gp = AbstractGPs.GP(with_lengthscale(SqExponentialKernel(), ipp_problem.MeasurementModel.L))
-    Ω = [ipp_problem.Graph.Omega[i, :] for i in 1:size(ipp_problem.Graph.Omega, 1)]
-    ν = ipp_problem.MeasurementModel.σ^2 .* ones(1:length(path))
-    y_hist = zeros(length(path)) # y_hist does not matter if we're not using expected_improvement or lower_confidence_bound
+function objective(ipp_problem::IPP, path::Vector{Int64}) 
+    """
+    Standard objective used for A and D-IPP
+    """
+    A = ipp_problem.MeasurementModel.A
+    Σₓ⁻¹ = ipp_problem.MeasurementModel.Σₓ⁻¹
+    σ = ipp_problem.MeasurementModel.σ
+    n = ipp_problem.n
 
-    x = ipp_problem.Graph.Theta[path, :]
-    X = [x[i, :] for i in 1:size(x, 1)]    
-    y = y_hist
-    post_gp = AbstractGPs.posterior(gp(X, ν), y)
+    ZA_mat_actual = σ^(-2)*sum((i in path)*A[i, :]*A[i, :]' for i in 1:n)
+    Σ_est_inv_actual = Symmetric(ZA_mat_actual + Σₓ⁻¹)
+    Σ_est_actual = Symmetric(inv(Σ_est_inv_actual))
 
     if ipp_problem.objective == "A-IPP"
-        variances = var(post_gp(Ω))
-        return sum(variances)
+        return tr(Σ_est_actual)
     elseif ipp_problem.objective == "D-IPP"
-        return logdet(cov(post_gp(Ω)))
+        return logdet(Σ_est_actual)
     else
         @error("objective function not implemented")
     end
@@ -168,10 +172,10 @@ function expected_improvement(y_min, μ, σ)
     return (y_min - μ)*p_imp + (σ^2)*p_ymin
 end
 
-function compute_obj_hist(ipp_problem::IPP, y_hist, path)
+function compute_adaptive_obj_hist(ipp_problem::IPP, y_hist, path)
     obj_hist = zeros(length(y_hist))
     for i in 1:length(y_hist)
-        obj_hist[i] = objective(ipp_problem, path[1:i], y_hist[1:i])
+        obj_hist[i] = adaptive_objective(ipp_problem, path[1:i], y_hist[1:i])
     end
     return obj_hist
 end

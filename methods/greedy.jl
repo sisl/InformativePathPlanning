@@ -84,8 +84,8 @@ function solve(ipp_problem::IPP, method::Greedy)
     end
 
     if ipp_problem.objective == "expected_improvement"
-        return path, objective(ipp_problem, path, y_hist), y_hist
+        return path, adaptive_objective(ipp_problem, path, y_hist), y_hist
     else
-        return path, objective(ipp_problem, path, y_hist)
+        return path, objective(ipp_problem, path)
     end
 end
