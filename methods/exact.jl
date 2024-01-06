@@ -143,14 +143,6 @@ function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
         optimal_z = JuMP.value.(z)
         optimal_u = JuMP.value.(u)
         path = extract_path(ipp_problem, G, deepcopy(optimal_z), deepcopy(optimal_u), start, goal, all_pairs_shortest_paths, dist, B)
-        @show objective(ipp_problem, path)
-        @show objVal
-
-        ZA_mat_actual = σ^(-2)*sum((i in path)*A[i, :]*A[i, :]' for i in 1:n)
-        Σ_est_inv_actual = ZA_mat_actual + Σₓ⁻¹
-        @show tr(inv(Σ_est_inv_actual))
-        heatmap(reshape(optimal_u, isqrt(n), isqrt(n))')
-        savefig("/Users/joshuaott/InformativePathPlanning/figures/u.png")
         return path, objVal
     end
 end

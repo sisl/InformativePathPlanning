@@ -659,10 +659,17 @@ function figure_6(load_data=false, data_path="data/")
         lower_bound = reshape([data[i].lower_bound for i in 1:length(data)], (num_sims, length(xdata)))
 
         plot(color_palette=:tab10)
-        y_label = obj == "A-IPP" ? "tr(Σ)" : "logdet(Σ)"
         title = obj == "A-IPP" ? "tr(Σ)" : "logdet(Σ)"
 
-        plot(xdata ./ edge_length, (mean(upper_bound, dims=1)' - mean(lower_bound, dims=1)') ./ abs.(mean(lower_bound, dims=1)'), ribbon = (std_err(upper_bound, num_sims) - std_err(lower_bound, num_sims)) ./ abs.(mean(lower_bound, dims=1)'), fillalpha = 0.2, xlabel = "Budget", ylabel = "Gap", title=title, label = "Gap", color=aspc_color, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm)
+        if obj == "A-IPP"
+            δ = (1/m)*(upper_bound - lower_bound) ./ ((1/m)*lower_bound)
+            plot(xdata ./ edge_length, (mean(δ, dims=1)'), ribbon = (std_err(δ, num_sims)), fillalpha = 0.2, xlabel = "Budget", title=title, label = "Gap", color=aspc_color, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm)
+            # plot!(xdata ./ edge_length, (mean(upper_bound, dims=1)' - mean(lower_bound, dims=1)') ./ abs.(mean(lower_bound, dims=1)'), ribbon = (std_err(upper_bound, num_sims) - std_err(lower_bound, num_sims)) ./ abs.(mean(lower_bound, dims=1)'), fillalpha = 0.2, xlabel = "Budget", ylabel = "Gap", title=title, label = "Gap", color=:red, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm)
+        else
+            δ = (1/m)*(upper_bound - lower_bound)
+            plot(xdata ./ edge_length,  (mean(exp.(δ), dims=1)') , ribbon = std_err(exp.(δ), num_sims), fillalpha = 0.2, xlabel = "Budget", title=title, label = "Gap", color=aspc_color, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm, ylims=(1.0, maximum(mean(exp.(δ), dims=1)')))
+            # plot(xdata ./ edge_length, exp.( (1/m) * (mean(upper_bound, dims=1)' - mean(lower_bound, dims=1)' )), ribbon = exp.( (1/m) * (std_err(upper_bound, num_sims) - std_err(lower_bound, num_sims))), fillalpha = 0.2, xlabel = "Budget", ylabel = "Gap", title=title, label = "Gap", color=aspc_color, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm)
+        end
 
         if obj == "A-IPP"
             a_opt_plt = plot!()
@@ -812,5 +819,5 @@ end
 # figure_2()
 # figure_3()
 # figure_5(true)
-figure_6()
+figure_6(true)
 # figure_9(true)
