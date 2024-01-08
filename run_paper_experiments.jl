@@ -420,7 +420,59 @@ end
 #####################################################################################
 # Figure 4
 #####################################################################################
-function figure_4()
+function figure_4(load_data=false, data_path="data/")
+    """
+    Create plot showing trajectories for each of the methods with obstacles included.
+    """
+
+    n = 50^2
+    m = 20
+    edge_length = 1
+    L = 0.05*edge_length # length scale 
+    σ = 1.0
+    obj = "A-IPP" 
+    solution_time = 120.0
+    rng = MersenneTwister(12345)
+    B = 4*edge_length
+    start = 1
+    goal = n
+    replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
+    obstacles = true
+
+
+    # Generate a grid graph
+    if obstacles
+        Graph, centers, radii = build_graph(rng, data_path, n, m, edge_length, start, goal, objective, 1, obstacles)
+    else
+        Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective, 1, obstacles)
+    end
+    
+    # Generate a measurement model
+    Σₓ = kernel(Graph.Omega, Graph.Omega, L) # = K(X⁺, X⁺)
+    Σₓ = round.(Σₓ, digits=8)
+    ϵ = Matrix{Float64}(I, size(Σₓ))*1e-6 # Add a Small Constant to the Diagonal (Jitter): This is a common technique to improve the numerical stability of a kernel matrix. 
+    Σₓ⁻¹ = inv(Σₓ + ϵ)
+    Σₓ⁻¹ = round.(Σₓ⁻¹, digits=8)
+    KX⁺X = kernel(Graph.Omega, Graph.Theta, L) # = K(X⁺, X)
+    Aᵀ = Σₓ⁻¹ * KX⁺X
+    A = Aᵀ'
+    A = round.(A, digits=8)
+    measurement_model = MeasurementModel(σ, Σₓ, Σₓ⁻¹, L, A)
+
+    # Create an IPP problem
+    ipp_problem = IPP(rng, n, m, Graph, measurement_model, obj, B, solution_time, replan_rate)
+
+    methods = [ASPC(), Exact(), trΣ⁻¹(), Greedy(), mcts(), random()]
+
+    for (method_idx, method) in enumerate(methods)
+        # Solve the IPP problem
+        val, t = @timed solve(ipp_problem, method)
+        path, objective_value = val
+
+        # Plot the trajectory problem
+        plot_trajectory(ipp_problem, path, objective_value, t, "figures/paper/figure_4/$(typeof(method))_$(n)n_$(obj).pdf")
+    end
+        
 
 end
 
@@ -759,7 +811,7 @@ function figure_7(load_data=false, data_path="data/")
         end
     end
     plot([d_opt_plts..., a_opt_plts...]..., size=(800, 800), layout=(2,2), margin=5mm, legend=false, title="", xlabel="", ylabel="", xticks =[0.0, 5e3, 10e3, 15e3])
-
+    savefig("figures/paper/figure_7/refinement.pdf")
 end
 
 #####################################################################################

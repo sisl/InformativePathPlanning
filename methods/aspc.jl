@@ -133,10 +133,25 @@ function action(ipp_problem::IPP, method::ASPC, gp::AbstractGPs.PosteriorGP, exe
     reachable_nodes, rewards = val
     println("Estimate Rewards Time: $(t)")  
 
-    budget_remaining = ipp_problem.B - path_distance(ipp_problem, executed_path)
-    steps_remaining = round(Int, budget_remaining*(n_sqrt-1)/ipp_problem.Graph.edge_length)
+    # budget_remaining = ipp_problem.B - path_distance(ipp_problem, executed_path)
+    # steps_remaining = round(Int, budget_remaining*(n_sqrt-1)/ipp_problem.Graph.edge_length)
+
+    # steps_remaining = round(Int, ipp_problem.B*(n_sqrt-1)/ipp_problem.Graph.edge_length - length(executed_path))
+    # # show the shortest number of steps to the goal
+    # println("Budget steps remaining: ", ipp_problem.B*(n_sqrt-1)/ipp_problem.Graph.edge_length - length(executed_path))
+    # println("Steps remaining: $(steps_remaining)")
+    # println("Shortest number of steps to goal: $(length(shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, pos, ipp_problem.Graph.goal)))")
 
     # find the nearest even number of steps remaining
+    if ipp_problem.B % 2 == 0
+        # even budget
+        budget_remaining = ipp_problem.B - path_distance(ipp_problem, executed_path)
+        steps_remaining = round(Int, budget_remaining*(n_sqrt-1)/ipp_problem.Graph.edge_length)
+    else
+        # odd budget
+        steps_remaining = round(Int, ipp_problem.B*(n_sqrt-1)/ipp_problem.Graph.edge_length - length(executed_path))
+    end
+
     # if steps_remaining % 2 != 0
     #     steps_remaining += 1
     # end
@@ -282,5 +297,5 @@ function solve(mipp::MultiagentIPP, method::ASPC, plot_gif=false, centers=[], ra
         JLD2.save("data/mipp_gif_paths_hist.jld2", "planned_paths_hist", planned_paths_hist)
     end
 
-    return paths#, objective(ipp_problem, paths, y_hist)
+    return paths
 end

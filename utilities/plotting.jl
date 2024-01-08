@@ -1,4 +1,7 @@
 function Plots.plot(ipp_problem::IPP, path::Vector{Int}, objVal::Float64, runtime::Float64, figure_path::String="figures/1.pdf")
+    """
+    Standard IPP plotting 
+    """
     objective = ipp_problem.objective
     B = ipp_problem.B
     n = ipp_problem.n
@@ -25,6 +28,9 @@ function Plots.plot(ipp_problem::IPP, path::Vector{Int}, objVal::Float64, runtim
 end
 
 function Plots.plot(mmipp::MultimodalIPP, path::Vector{Int}, drills::Vector{Int}, objVal::Float64, runtime::Float64, figure_path::String="figures/1.pdf")
+    """
+    Plots Multimodal IPP problem with drill locations 
+    """
     ipp_problem = mmipp.ipp_problem
     objective = ipp_problem.objective
     B = ipp_problem.B
@@ -54,6 +60,9 @@ function Plots.plot(mmipp::MultimodalIPP, path::Vector{Int}, drills::Vector{Int}
 end
 
 function Plots.plot(mmipp::MultimodalIPP, path::Vector{Int}, mcts_drills::Vector{Int}, cvx_drills::Vector{Int}, objVal::Float64, runtime::Float64, figure_path::String="figures/1.pdf")
+    """
+    Plots Multimodal IPP problem with both MCTS and CVX drill locations
+    """
     ipp_problem = mmipp.ipp_problem
     objective = ipp_problem.objective
     B = ipp_problem.B
@@ -84,11 +93,15 @@ function Plots.plot(mmipp::MultimodalIPP, path::Vector{Int}, mcts_drills::Vector
 end
 
 function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist, centers, radii)
+    """
+    Plots Multiagent IPP gif
+    """
     planning_steps = length(gp_hist)
     n = mipp.ipp_problem.n
     n_sqrt = isqrt(n)
 
     Theta = mipp.ipp_problem.Graph.Theta
+    Omega = mipp.ipp_problem.Graph.Omega
     L = mipp.ipp_problem.MeasurementModel.L
     plot_scale = range(0, mipp.ipp_problem.Graph.edge_length, length=100) #1:0.1:10
     X_plot = [[i,j] for i = plot_scale, j = plot_scale]
@@ -105,7 +118,7 @@ function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist
         # heatmap of GP variance
         post_gp = gp_hist[i]
         fxs = var(post_gp(Ω))
-        heatmap(collect(plot_scale), collect(plot_scale), reshape(fxs, plot_size...), c = cgrad(:inferno, rev = false), xaxis=false, yaxis=false, legend=false, grid=false, clim=(0,1))
+        heatmap(collect(plot_scale), collect(plot_scale), reshape(fxs, plot_size...), c = cgrad(:inferno, rev = false), xaxis=false, yaxis=false, grid=false, clim=(0,1))
 
         G = mipp.ipp_problem.Graph.G
         nodes_in_new_G = [G[i] for i in 1:length(G)]
@@ -121,6 +134,7 @@ function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist
         # end
         nodes_in_obstacles = [i for i in 1:n if i ∉ nodes_in_new_G]
         scatter!([Theta[i, 2] for i in nodes_in_obstacles], [Theta[i, 1] for i in nodes_in_obstacles], color=:black, label="Obstacle", markersize=6)
+        scatter!(Omega[:, 2], Omega[:, 1], color=:white, label="Prediction Location", markersize=3)
 
         for j in 1:mipp.M
             if i > length(paths_hist[j])
@@ -134,8 +148,10 @@ function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist
 
             # plot planned path for agent i
             planned_path = planned_paths_hist[j][i]
-            plot!(Theta[planned_path, 2], Theta[planned_path, 1], color=agent_colors[j], linewidth=3, linestyle=:dash)
+            plot!(Theta[planned_path, 2], Theta[planned_path, 1], color=agent_colors[j], linewidth=3, linestyle=:dash, label="")
         end
+        # plot the legend so it is to the side of the plot but not on top of the plot
+        plot!(legend=:outerleft, size=(1000, 500))
     end
     Plots.gif(anim,  "figures/multiagent.gif", fps = 5)
 end
