@@ -425,28 +425,27 @@ function figure_4(load_data=false, data_path="data/")
     Create plot showing trajectories for each of the methods with obstacles included.
     """
 
-    n = 50^2
+    n = 25^2
     m = 20
     edge_length = 1
-    L = 0.05*edge_length # length scale 
+    L = 0.1*edge_length # length scale 
     σ = 1.0
     obj = "A-IPP" 
     solution_time = 120.0
-    rng = MersenneTwister(12345)
+    rng = MersenneTwister(12364)
     B = 4*edge_length
     start = 1
     goal = n
-    replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
-    obstacles = true
-
+    replan_rate = round(Int, 0.02 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
+    obstacles = false
 
     # Generate a grid graph
     if obstacles
-        Graph, centers, radii = build_graph(rng, data_path, n, m, edge_length, start, goal, objective, 1, obstacles)
+        Graph, centers, radii = build_graph(rng, data_path, n, m, edge_length, start, goal, obj, 1, obstacles)
     else
-        Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective, 1, obstacles)
+        Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, obj, 1, obstacles)
     end
-    
+
     # Generate a measurement model
     Σₓ = kernel(Graph.Omega, Graph.Omega, L) # = K(X⁺, X⁺)
     Σₓ = round.(Σₓ, digits=8)
@@ -464,16 +463,21 @@ function figure_4(load_data=false, data_path="data/")
 
     methods = [ASPC(), Exact(), trΣ⁻¹(), Greedy(), mcts(), random()]
 
+    plts = []
     for (method_idx, method) in enumerate(methods)
         # Solve the IPP problem
         val, t = @timed solve(ipp_problem, method)
         path, objective_value = val
 
         # Plot the trajectory problem
-        plot_trajectory(ipp_problem, path, objective_value, t, "figures/paper/figure_4/$(typeof(method))_$(n)n_$(obj).pdf")
+        plt = plot_trajectory(ipp_problem, path, objective_value, t, "figures/paper/figure_4/$(typeof(method))_$(n)n_$(obj).pdf")
+        title = typeof(method) == ASPC ? "ASPC" : typeof(method) == Exact ? "Exact" : typeof(method) == trΣ⁻¹ ? "trΣ⁻¹" : typeof(method) == Greedy ? "Greedy" : typeof(method) == mcts ? "MCTS" : "Random"
+        plt = plot!(title=title, legend=false)
+        savefig("figures/paper/figure_4/runs/$(title).pdf")
+        push!(plts, plt)
     end
-        
-
+    # plot(plts..., size=(2000, 500), layout=(1,6), margin=8mm, legend=false)
+    # savefig("figures/paper/figure_4/trajectories.pdf")
 end
 
 #####################################################################################
@@ -937,7 +941,8 @@ end
 # figure_1()
 # figure_2()
 # figure_3()
+figure_4()
 # figure_5(true)
 # figure_6(true)
-figure_7()
+# figure_7()
 # figure_9(true)

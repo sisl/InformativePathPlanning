@@ -156,6 +156,46 @@ function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist
     Plots.gif(anim,  "figures/multiagent.gif", fps = 5)
 end
 
+function plot_trajectory(ipp_problem::IPP, path::Vector{Int}, objVal::Float64, runtime::Float64, figure_path::String="figures/1.pdf")
+    """
+    Plots trajectory with heatmap
+    """
+    n = ipp_problem.n
+    n_sqrt = isqrt(n)
+    σ_max = ipp_problem.MeasurementModel.σ
+
+    Theta = ipp_problem.Graph.Theta
+    Omega = ipp_problem.Graph.Omega
+    L = ipp_problem.MeasurementModel.L
+    plot_scale = range(0, ipp_problem.Graph.edge_length, length=100) #1:0.1:10
+    X_plot = [[i,j] for i = plot_scale, j = plot_scale]
+    plot_size = size(X_plot)
+    plot_Omega = Matrix(hcat(X_plot...)')
+    Ω = [plot_Omega[i, :] for i in 1:size(plot_Omega, 1)]
+
+
+    # heatmap of GP variance
+    gp = AbstractGPs.GP(with_lengthscale(SqExponentialKernel(), L))
+    ν = σ_max^2 .* ones(1:length(path)) #.* 3
+    x = Theta[path, :]
+    X = [x[i, :] for i in 1:size(x, 1)]    
+    y = zeros(size(X))#y_hist
+    post_gp = AbstractGPs.posterior(gp(X, ν), y)
+    fxs = var(post_gp(Ω))
+    heatmap(collect(plot_scale), collect(plot_scale), reshape(fxs, plot_size...), c = cgrad(:inferno, rev = false), xaxis=false, yaxis=false, grid=false, clim=(0,1))
+
+    G = ipp_problem.Graph.G
+    nodes_in_new_G = [G[i] for i in 1:length(G)]
+    nodes_in_new_G = unique(vcat(nodes_in_new_G...))
+
+    nodes_in_obstacles = [i for i in 1:n if i ∉ nodes_in_new_G]
+    scatter!([Theta[i, 2] for i in nodes_in_obstacles], [Theta[i, 1] for i in nodes_in_obstacles], color=:black, label="Obstacle", markersize=6)
+    scatter!(Omega[:, 2], Omega[:, 1], color=:white, label="Prediction Location", markersize=3)
+
+    plt = plot!(Theta[path, 2], Theta[path, 1], color=:orchid1, linewidth=3)
+    
+    return plt
+end
     
 
 #  # plot the heatmap of optimal u and the path over it

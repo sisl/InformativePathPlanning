@@ -73,6 +73,7 @@ function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
     # Objective
     @objective(model, Min, tr(Y))
 
+    # check if G_dict[i] is empty
     z_sums = [sum(z[(i,j)] for j in G_dict[i]) for i in 1:n]
     ZA_mat = σ^(-2)*sum(z_sums[i]*A[i, :]*A[i, :]' for i in 1:n)
     Σ_est_inv = JuMP.@expression(model, (ZA_mat + Σₓ⁻¹))
