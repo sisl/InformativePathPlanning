@@ -1,4 +1,6 @@
 include("IPP.jl")
+include("utilities/refinement.jl")
+
 using JLD2
 using Plots
 using Statistics
@@ -690,8 +692,73 @@ function figure_7(load_data=false, data_path="data/")
     Performs greedy swapping procedure as outlined by Joshi and Boyd
     """
 
-    # TODO
-    refined_paths, refinded_obj_vals = run_refinement(data, objective)
+    num_sims = 25
+    rng = MersenneTwister(12345)
+    a_opt_plts = Nothing
+    d_opt_plts = Nothing
+
+    for obj in ["A-IPP", "D-IPP"]
+        data = obj == "A-IPP" ? JLD2.load(data_path * "figure_2.jld2", "data") : JLD2.load(data_path * "figure_3.jld2", "data")
+
+        if load_data
+            refined_data = JLD2.load(data_path * "figure_7_refined.jld2", "data")
+        else
+            refined_paths, refined_obj_vals = run_refinement(rng, data, obj)
+
+            refined_data = []
+            for i in 1:eachindex(data)
+                new_data = SimulationData(sim_number=data[i].sim_number, run_type=data[i].run_type, n=data[i].n, m=data[i].m, B=data[i].B, L=data[i].L, replan_rate=data[i].replan_rate, timeout=data[i].timeout, σ_min=data[i].σ_min, σ_max=data[i].σ_max, objVal=refined_obj_vals[i], y_hist=Vector{Float64}(), EI_hist=Vector{Float64}(), lower_bound=0.0, upper_bound=0.0, path=refined_paths[i], drills=Vector{Int}(), Omega=data[i].Omega, runtime=data[i].runtime)
+                push!(refined_data, new_data)
+            end
+
+            JLD2.save(data_path * "figure_7.jld2", "data", data)
+        end
+
+        # Plotting
+        exact_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Exact])
+        trΣ⁻¹_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == trΣ⁻¹])
+        greedy_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Greedy])
+        aspc_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == ASPC])
+        mcts_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == mcts])
+        random_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == random])
+        
+        exact_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == Exact], (num_sims, length(exact_xdata)))
+        trΣ⁻¹_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == trΣ⁻¹], (num_sims, length(trΣ⁻¹_xdata)))
+        greedy_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == Greedy], (num_sims, length(greedy_xdata)))
+        aspc_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == ASPC], (num_sims, length(aspc_xdata)))
+        mcts_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == mcts], (num_sims, length(mcts_xdata)))
+        random_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == random], (num_sims, length(random_xdata))) 
+        
+        plot(color_palette=:tab10)
+        plot!(exact_xdata, mean(exact_ydata, dims=1)', ribbon = std_err(exact_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Exact", color=exact_color)
+        plot!(trΣ⁻¹_xdata, mean(trΣ⁻¹_ydata, dims=1)', ribbon = std_err(trΣ⁻¹_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "trΣ", color=trΣ⁻¹_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
+        plot!(greedy_xdata, mean(greedy_ydata, dims=1)', ribbon = std_err(greedy_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Greedy", color=greedy_color)
+        plot!(aspc_xdata, mean(aspc_ydata, dims=1)', ribbon = std_err(aspc_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPC", color=aspc_color)
+        plot!(mcts_xdata, mean(mcts_ydata, dims=1)', ribbon = std_err(mcts_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color)
+        unrefined_plt = plot!(random_xdata, mean(random_ydata, dims=1)', ribbon = std_err(random_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Random", color=random_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
+        
+        exact_ydata = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == Exact], (num_sims, length(exact_xdata)))
+        trΣ⁻¹_ydata = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == trΣ⁻¹], (num_sims, length(trΣ⁻¹_xdata)))
+        greedy_ydata = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == Greedy], (num_sims, length(greedy_xdata)))
+        aspc_ydata = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == ASPC], (num_sims, length(aspc_xdata)))
+        mcts_ydata = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == mcts], (num_sims, length(mcts_xdata)))
+        random_ydata = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == random], (num_sims, length(random_xdata)))
+
+        plot(color_palette=:tab10)
+        plot!(exact_xdata, mean(exact_ydata, dims=1)', ribbon = std_err(exact_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Exact", color=exact_color)
+        plot!(trΣ⁻¹_xdata, mean(trΣ⁻¹_ydata, dims=1)', ribbon = std_err(trΣ⁻¹_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "trΣ", color=trΣ⁻¹_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
+        plot!(greedy_xdata, mean(greedy_ydata, dims=1)', ribbon = std_err(greedy_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Greedy", color=greedy_color)
+        plot!(aspc_xdata, mean(aspc_ydata, dims=1)', ribbon = std_err(aspc_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPC", color=aspc_color)
+        plot!(mcts_xdata, mean(mcts_ydata, dims=1)', ribbon = std_err(mcts_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color)
+        refined_plt = plot!(random_xdata, mean(random_ydata, dims=1)', ribbon = std_err(random_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Random", color=random_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
+
+        if obj == "A-IPP"
+            a_opt_plts = [unrefined_plt, refined_plt]
+        else
+            d_opt_plts = [unrefined_plt, refined_plt]
+        end
+    end
+    plot([d_opt_plts..., a_opt_plts...]..., size=(800, 800), layout=(2,2), margin=5mm, legend=false, title="", xlabel="", ylabel="", xticks =[0.0, 5e3, 10e3, 15e3])
 
 end
 
@@ -819,5 +886,6 @@ end
 # figure_2()
 # figure_3()
 # figure_5(true)
-figure_6(true)
+# figure_6(true)
+figure_7()
 # figure_9(true)

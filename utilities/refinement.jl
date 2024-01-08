@@ -3,12 +3,12 @@ function run_swap_abstractgp(ipp_problem::IPP, G_dict, path::Vector{Int}, iter::
     m = ipp_problem.m
     start = ipp_problem.Graph.start
     goal = ipp_problem.Graph.goal
-    objective = ipp_problem.objective
+    obj = ipp_problem.objective
     Theta = ipp_problem.Graph.Theta
     Omega = ipp_problem.Graph.Omega
     all_pairs_shortest_paths = ipp_problem.Graph.all_pairs_shortest_paths
 
-    if objective != "A-IPP" && objective != "D-IPP"
+    if obj != "A-IPP" && obj != "D-IPP"
         error("objective must be either a-optimal or d-optimal")
     end
 
@@ -50,21 +50,23 @@ function run_swap_abstractgp(ipp_problem::IPP, G_dict, path::Vector{Int}, iter::
 end
 
 
-function run_refinement(data, objective, data_path="/Users/joshuaott/InformativePathPlanning/data")
+function run_refinement(rng, data, obj, data_path="/Users/joshuaott/InformativePathPlanning/data")
 
-    if objective != "A-IPP" && objective != "D-IPP"
+    if obj != "A-IPP" && obj != "D-IPP"
         error("objective must be either A or D-IPP")
     end
 
-    rng = MersenneTwister(1234567)
     n = 0 # set to dumby to start
     m = data[1].m
     edge_length = 1
-    L = 0.01*edge_length # length scale
+    L = data[1].L
 
     refined_paths = []
-    refinded_obj_vals = []
-
+    refined_obj_vals = []
+    Graph = nothing
+    Omega = nothing
+    G_dict = nothing
+    
     for i in 1:length(data)
         println("$(i)/$(length(data)) | n = $(n)")
 
@@ -74,15 +76,15 @@ function run_refinement(data, objective, data_path="/Users/joshuaott/Informative
             start = 1
             goal = n
 
-            Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective)
-            Omega = data.Omega
+            Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, obj)
+            Omega = data[i].Omega
             Graph = IPPGraph(Graph.G, Graph.start, Graph.goal, Graph.Theta, Omega, Graph.all_pairs_shortest_paths, Graph.distances, Graph.true_map, Graph.edge_length)
             G = Graph.G
-            G_dict = Dict(j => Set(G[j]) for j in 1:N)
+            G_dict = Dict(j => Set(G[j]) for j in 1:n)
         end
 
         path = data[i].path
-        σ = data[i].σ
+        σ = data[i].σ_max
         B = data[i].B
         solution_time = data[i].timeout
         replan_rate = data[i].replan_rate
@@ -100,17 +102,17 @@ function run_refinement(data, objective, data_path="/Users/joshuaott/Informative
         measurement_model = MeasurementModel(σ, Σₓ, Σₓ⁻¹, L, A)
 
         # Create an IPP problem
-        ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, solution_time, replan_rate)
+        ipp_problem = IPP(rng, n, m, Graph, measurement_model, obj, B, solution_time, replan_rate)
 
         swapped_path = run_swap_abstractgp(ipp_problem, G_dict, path, 1)
 
         refined_obj_val = objective(ipp_problem, swapped_path)
 
-        println(data[i].run_type * " Improvement: ", data[i].objVal - refined_obj_val) 
+        println(data[i].run_type, "  Improvement: ", data[i].objVal - refined_obj_val) 
 
         push!(refined_paths, swapped_path)
-        push!(refinded_obj_vals, refined_obj_val)
+        push!(refined_obj_vals, refined_obj_val)
     end
 
-    return refined_paths, refinded_obj_vals
+    return refined_paths, refined_obj_vals
 end
