@@ -71,18 +71,6 @@ function remove_obstacles(rng, n::Int, ipp_graph::IPPGraph)
     graph = build_graph(new_G, n, ipp_graph.Theta)
     new_all_pairs_shortest_paths = Graphs.floyd_warshall_shortest_paths(graph)
 
-    plot()
-    nodes_in_new_G = [new_G[i] for i in 1:length(new_G)]
-    nodes_in_new_G = unique(vcat(nodes_in_new_G...))
-    Theta = ipp_graph.Theta
-    scatter!([Theta[i, 1] for i in nodes_in_new_G], [Theta[i, 2] for i in nodes_in_new_G])
-    scatter!([Theta[i, 1] for i in nodes_in_obstacles], [Theta[i, 2] for i in nodes_in_obstacles], color=:red)
-
-    savefig("/Users/joshuaott/Desktop/obstacles.png")
-    sp = shortest_path(new_all_pairs_shortest_paths, 1, n)
-    plot!(Theta[sp, 1], Theta[sp, 2], color=:red, linewidth=3)
-    savefig("/Users/joshuaott/Desktop/obstacles.png")
-
     return IPPGraph(new_G, ipp_graph.start, ipp_graph.goal, ipp_graph.Theta, ipp_graph.Omega, new_all_pairs_shortest_paths, ipp_graph.distances, ipp_graph.true_map, edge_length), centers, radii
 end
 

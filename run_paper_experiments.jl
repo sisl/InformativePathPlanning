@@ -129,8 +129,8 @@ function figure_1(load_data=false, data_path="data/")
                     sleep(0.1)
                 end
             end
+            JLD2.save(data_path * "figure_1.jld2", "data", data)
         end
-        JLD2.save(data_path * "figure_1.jld2", "data", data)
     end
     # Plotting 
     mip_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == DuttaMIP])
@@ -241,8 +241,8 @@ function figure_2(load_data=false, data_path="data/")
                     sleep(0.1)
                 end
             end
+            JLD2.save(data_path * "figure_2.jld2", "data", data)
         end
-        JLD2.save(data_path * "figure_2.jld2", "data", data)
     end
     # Plotting 
     exact_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Exact])
@@ -286,7 +286,7 @@ function figure_2(load_data=false, data_path="data/")
     plot!(mcts_xdata, mean(mcts_ydata, dims=1)', ribbon = std_err(mcts_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color)
     obj_plot = plot!(random_xdata, mean(random_ydata, dims=1)', ribbon = std_err(random_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Random", color=random_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))    
     
-    plot([rt_plot, obj_plot]..., size=(1200, 500), layout=(1,2), margin=8mm, legend=false, widen=false)
+    plot([rt_plot, obj_plot]..., size=(1200, 500), layout=(1,2), margin=8mm, legend=false, widen=false, xticks =[0.0, 5e3, 10e3, 15e3])
     savefig("figures/paper/figure_2/a-ipp.pdf")
 end
 
@@ -368,8 +368,8 @@ function figure_3(load_data=false, data_path="data/")
                     sleep(0.1)
                 end
             end
+            JLD2.save(data_path * "figure_3.jld2", "data", data)
         end
-        JLD2.save(data_path * "figure_3.jld2", "data", data)
     end
     # Plotting 
     exact_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Exact])
@@ -413,7 +413,7 @@ function figure_3(load_data=false, data_path="data/")
     plot!(mcts_xdata, mean(mcts_ydata, dims=1)', ribbon = std_err(mcts_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color)
     obj_plot = plot!(random_xdata, mean(random_ydata, dims=1)', ribbon = std_err(random_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Random", color=random_color, title="logdet(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))    
     
-    plot([rt_plot, obj_plot]..., size=(1200, 500), layout=(1,2), margin=8mm, legend=false, widen=false)
+    plot([rt_plot, obj_plot]..., size=(1200, 500), layout=(1,2), margin=8mm, legend=false, widen=false, xticks =[0.0, 5e3, 10e3, 15e3])
     savefig("figures/paper/figure_3/d-ipp.pdf")
 end
 
@@ -753,21 +753,21 @@ function figure_7(load_data=false, data_path="data/")
     a_opt_plts = Nothing
     d_opt_plts = Nothing
 
-    for obj in ["A-IPP", "D-IPP"]
+    for obj in ["D-IPP", "A-IPP"]
         data = obj == "A-IPP" ? JLD2.load(data_path * "figure_2.jld2", "data") : JLD2.load(data_path * "figure_3.jld2", "data")
 
         if load_data
-            refined_data = JLD2.load(data_path * "figure_7_refined.jld2", "data")
+            refined_data = JLD2.load(data_path * "figure_7_refined_$(obj).jld2", "data")
         else
             refined_paths, refined_obj_vals = run_refinement(rng, data, obj)
 
             refined_data = []
-            for i in 1:eachindex(data)
+            for i in eachindex(data)
                 new_data = SimulationData(sim_number=data[i].sim_number, run_type=data[i].run_type, n=data[i].n, m=data[i].m, B=data[i].B, L=data[i].L, replan_rate=data[i].replan_rate, timeout=data[i].timeout, σ_min=data[i].σ_min, σ_max=data[i].σ_max, objVal=refined_obj_vals[i], y_hist=Vector{Float64}(), EI_hist=Vector{Float64}(), lower_bound=0.0, upper_bound=0.0, path=refined_paths[i], drills=Vector{Int}(), Omega=data[i].Omega, runtime=data[i].runtime)
                 push!(refined_data, new_data)
             end
 
-            JLD2.save(data_path * "figure_7.jld2", "data", data)
+            JLD2.save(data_path * "figure_7_refined_$(obj).jld2", "data", refined_data)
         end
 
         # Plotting
@@ -810,9 +810,13 @@ function figure_7(load_data=false, data_path="data/")
 
         if obj == "A-IPP"
             a_opt_plts = [unrefined_plt, refined_plt]
+            plot(a_opt_plts..., size=(800, 800), layout=(2,1), margin=5mm, legend=false, title="", xlabel="", ylabel="", xticks =[0.0, 5e3, 10e3, 15e3])
         else
             d_opt_plts = [unrefined_plt, refined_plt]
+            plot(d_opt_plts..., size=(800, 800), layout=(2,1), margin=5mm, legend=false, title="", xlabel="", ylabel="", xticks =[0.0, 5e3, 10e3, 15e3])
         end
+        savefig("figures/paper/figure_7/refinement_$(obj).pdf")
+
     end
     plot([d_opt_plts..., a_opt_plts...]..., size=(800, 800), layout=(2,2), margin=5mm, legend=false, title="", xlabel="", ylabel="", xticks =[0.0, 5e3, 10e3, 15e3])
     savefig("figures/paper/figure_7/refinement.pdf")
@@ -941,8 +945,8 @@ end
 # figure_1()
 # figure_2()
 # figure_3()
-figure_4()
-# figure_5(true)
-# figure_6(true)
-# figure_7()
+# figure_4()
+# figure_5()
+# figure_6()
+figure_7()
 # figure_9(true)

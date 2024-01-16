@@ -39,7 +39,8 @@ function run_swap_abstractgp(ipp_problem::IPP, G_dict, path::Vector{Int}, iter::
                 continue
             end
 
-            if objective(ipp_problem, new_path) < objective(ipp_problem, path)
+            if objective(ipp_problem, new_path) + 1e-3 < objective(ipp_problem, path)
+                println("Swapping! Old objective: ", objective(ipp_problem, path), " New objective: ", objective(ipp_problem, new_path))
                 return run_swap_abstractgp(ipp_problem, G_dict, new_path, iter+1)
             end
 
@@ -67,7 +68,7 @@ function run_refinement(rng, data, obj, data_path="/Users/joshuaott/InformativeP
     Omega = nothing
     G_dict = nothing
     
-    for i in 1:length(data)
+    for i in eachindex(data)
         println("$(i)/$(length(data)) | n = $(n)")
 
         if n != data[i].n
@@ -88,6 +89,8 @@ function run_refinement(rng, data, obj, data_path="/Users/joshuaott/InformativeP
         B = data[i].B
         solution_time = data[i].timeout
         replan_rate = data[i].replan_rate
+        Omega = data[i].Omega
+        Graph = IPPGraph(Graph.G, Graph.start, Graph.goal, Graph.Theta, Omega, Graph.all_pairs_shortest_paths, Graph.distances, Graph.true_map, Graph.edge_length)
 
         # Generate a new measurement model since Omega was updated
         Σₓ = kernel(Graph.Omega, Graph.Omega, L) # = K(X⁺, X⁺)
@@ -108,7 +111,11 @@ function run_refinement(rng, data, obj, data_path="/Users/joshuaott/InformativeP
 
         refined_obj_val = objective(ipp_problem, swapped_path)
 
-        println(data[i].run_type, "  Improvement: ", data[i].objVal - refined_obj_val) 
+        improvement = data[i].objVal - refined_obj_val
+        println(data[i].run_type, "  Improvement: ", improvement)
+        if improvement < 0
+            @warn("🚨🚨🚨Refinement made things worse!🚨🚨🚨")
+        end
 
         push!(refined_paths, swapped_path)
         push!(refined_obj_vals, refined_obj_val)
