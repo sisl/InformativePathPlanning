@@ -39,8 +39,7 @@ function run_swap_abstractgp(ipp_problem::IPP, G_dict, path::Vector{Int}, iter::
                 continue
             end
 
-            if objective(ipp_problem, new_path) + 1e-3 < objective(ipp_problem, path)
-                println("Swapping! Old objective: ", objective(ipp_problem, path), " New objective: ", objective(ipp_problem, new_path))
+            if objective(ipp_problem, new_path) < objective(ipp_problem, path)
                 return run_swap_abstractgp(ipp_problem, G_dict, new_path, iter+1)
             end
 

@@ -311,7 +311,7 @@ function solve(mmipp::MultimodalIPP, method::mcts, run_random=false)
     if mmipp.ipp_problem.objective == "expected_improvement"
         return path, objective(mmipp, path, y_hist, drills), y_hist, drills
     else
-        return path, objective(mmipp, path, y_hist, drills), drills
+        return path, drills, objective(mmipp, path, y_hist, drills)
     end
 end
 

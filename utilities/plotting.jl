@@ -156,13 +156,15 @@ function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist
     Plots.gif(anim,  "figures/multiagent.gif", fps = 5)
 end
 
-function plot_trajectory(ipp_problem::IPP, path::Vector{Int}, objVal::Float64, runtime::Float64, figure_path::String="figures/1.pdf")
+function plot_trajectory(mmipp::MultimodalIPP, path::Vector{Int}, objVal::Float64, drills::Vector{Int}, runtime::Float64, figure_path::String="figures/1.pdf")
     """
     Plots trajectory with heatmap
     """
+    ipp_problem = mmipp.ipp_problem
     n = ipp_problem.n
     n_sqrt = isqrt(n)
     σ_max = ipp_problem.MeasurementModel.σ
+    σ_min = mmipp.σ_min
 
     Theta = ipp_problem.Graph.Theta
     Omega = ipp_problem.Graph.Omega
@@ -177,12 +179,16 @@ function plot_trajectory(ipp_problem::IPP, path::Vector{Int}, objVal::Float64, r
     # heatmap of GP variance
     gp = AbstractGPs.GP(with_lengthscale(SqExponentialKernel(), L))
     ν = σ_max^2 .* ones(1:length(path)) #.* 3
+    drill_path_idx = [findfirst(x->x==i, path) for i in drills]
+    ν[drill_path_idx] .= σ_min
+
     x = Theta[path, :]
     X = [x[i, :] for i in 1:size(x, 1)]    
     y = zeros(size(X))#y_hist
     post_gp = AbstractGPs.posterior(gp(X, ν), y)
     fxs = var(post_gp(Ω))
-    heatmap(collect(plot_scale), collect(plot_scale), reshape(fxs, plot_size...), c = cgrad(:inferno, rev = false), xaxis=false, yaxis=false, grid=false, clim=(0,1))
+    # Do not plot with colorbar
+    heatmap(collect(plot_scale), collect(plot_scale), reshape(fxs, plot_size...), c = cgrad(:inferno, rev = false), xaxis=false, yaxis=false, grid=false, colorbar=false, clim=(0,1), size=(600, 600))
 
     G = ipp_problem.Graph.G
     nodes_in_new_G = [G[i] for i in 1:length(G)]
@@ -190,9 +196,11 @@ function plot_trajectory(ipp_problem::IPP, path::Vector{Int}, objVal::Float64, r
 
     nodes_in_obstacles = [i for i in 1:n if i ∉ nodes_in_new_G]
     scatter!([Theta[i, 2] for i in nodes_in_obstacles], [Theta[i, 1] for i in nodes_in_obstacles], color=:black, label="Obstacle", markersize=6)
-    scatter!(Omega[:, 2], Omega[:, 1], color=:white, label="Prediction Location", markersize=3)
+    scatter!(Omega[:, 2], Omega[:, 1], color=:white, label="Prediction Location", markersize=8)
 
-    plt = plot!(Theta[path, 2], Theta[path, 1], color=:orchid1, linewidth=3)
+    plt = plot!(Theta[path, 2], Theta[path, 1], color=:orchid1, linewidth=6)
+    # scatter the drill locations
+    scatter!([Theta[drills[i], 2] for i in 1:length(drills)], [Theta[drills[i], 1] for i in 1:length(drills)], label="drill loc", c=:yellow, markersize=10)
     
     return plt
 end

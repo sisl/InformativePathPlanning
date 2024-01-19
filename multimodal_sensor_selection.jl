@@ -48,7 +48,20 @@ function run_d_optimal_sensor_selection(mmipp::MultimodalIPP, path::Vector{Int})
     # take top k_sensor values from z
     optimal_s = JuMP.value.(model[:s])
     indices_values = [(i, optimal_s[i]) for i in path]
-    sorted_indices_values = sort(indices_values, by=x->x[2], rev=true)[1:min(k_sensors, length(indices_values))]
+    # sorted_indices_values = sort(indices_values, by=x->x[2], rev=true)[1:min(k_sensors, length(indices_values))]
+    # take top k_sensor values from z. But check to ensure that the indices are greater than 3 apart (i.e. not adjacent)
+    # this prevents drills clustering together
+    sorted_indices_values = sort(indices_values, by=x->x[2], rev=true)
+    n_sqrt = isqrt(n)
+    for i in 1:length(sorted_indices_values)-1
+        # convert distance to steps
+        steps_apart = dist[sorted_indices_values[i][1], sorted_indices_values[i+1][1]] *(n_sqrt-1) / ipp_problem.Graph.edge_length
+        if steps_apart <= 3
+            sorted_indices_values[i+1] = (sorted_indices_values[i+1][1], 0)
+        end
+    end
+    sorted_indices_values = sort(sorted_indices_values, by=x->x[2], rev=true)[1:min(k_sensors, length(indices_values))]
+
     drills = [tuple[1] for tuple in sorted_indices_values]
 
     @show sum(optimal_s[i] for i in path)
@@ -115,10 +128,29 @@ function run_a_optimal_sensor_selection(mmipp::MultimodalIPP, path::Vector{Int})
     # take top k_sensor values from S
     optimal_s = JuMP.value.(model[:s])
     indices_values = [(i, optimal_s[i]) for i in path]
-    sorted_indices_values = sort(indices_values, by=x->x[2], rev=true)[1:min(k_sensors, length(indices_values))]
+    # sorted_indices_values = sort(indices_values, by=x->x[2], rev=true)[1:min(k_sensors, length(indices_values))]
+    # take top k_sensor values from z. But check to ensure that the indices are greater than 3 apart (i.e. not adjacent)
+    # this prevents drills clustering together
+    sorted_indices_values = sort(indices_values, by=x->x[2], rev=true)
+    n_sqrt = isqrt(n)
+    for i in 1:length(sorted_indices_values)-1
+        # convert distance to steps
+        steps_apart = dist[sorted_indices_values[i][1], sorted_indices_values[i+1][1]] *(n_sqrt-1) / ipp_problem.Graph.edge_length
+        if steps_apart <= 3
+            sorted_indices_values[i+1] = (sorted_indices_values[i+1][1], 0)
+        end
+    end
+    sorted_indices_values = sort(sorted_indices_values, by=x->x[2], rev=true)[1:min(k_sensors, length(indices_values))]
+
     drills = [tuple[1] for tuple in sorted_indices_values]
 
     @show sum(optimal_s[i] for i in path)
+    
+    # # plot optimal s vs path steps
+    # plot(collect(1:length(path)), optimal_s[path], xlabel="Path Step", ylabel="Sensor Weight", label="Sensor Weights", title="Sensor Weights vs Path Steps")
+    # # scatter drill locations on top of plot
+    # drill_path_idx = [findfirst(x->x==i, path) for i in drills]
+    # scatter!(drill_path_idx, optimal_s[drills], label="Drill Locations")
 
     return drills
 end
