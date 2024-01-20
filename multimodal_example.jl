@@ -39,7 +39,7 @@ function run_multimodal_example()
     measurement_model = MeasurementModel(σ, Σₓ, Σₓ⁻¹, L, A)
 
     # Create an IPP problem
-    ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, solution_time, replan_rate)
+    ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, solution_time, replan_rate, "open")
     mmipp = MultimodalIPP(ipp_problem, σ_min, σ_max, k)
 
     # Solve the IPP problem

@@ -41,7 +41,11 @@ function run_dutta_mip(ipp_problem::IPP, idx)
     Dutta, Shamak, Nils Wilde, and Stephen L. Smith. "Informative Path Planning in Random Fields via Mixed Integer Programming."
     2022 IEEE 61st Conference on Decision and Control (CDC). IEEE, 2022.
     """
-    model = Model(Gurobi.Optimizer) # Mosek does not support SOS1 constraints
+    if ipp_problem.solver_type == "open"
+        @error("Gurobi solver is required for Dutta et al. method")
+    else
+        model = Model(Gurobi.Optimizer) # Mosek does not support SOS1 constraints
+    end
 
     G = ipp_problem.Graph.G
     A = ipp_problem.MeasurementModel.A

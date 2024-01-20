@@ -31,21 +31,44 @@ function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
     tick()
 
     if relax
-        model = Model(Mosek.Optimizer)
+        if ipp_problem.solver_type == "open"
+            println("Hypatia")
+            model = Model(Hypatia.Optimizer)
+        else
+            println("Mosek")
+            model = Model(Mosek.Optimizer)
+        end
     else
-        model = Model(
-            optimizer_with_attributes(
-                Pajarito.Optimizer,
-                "oa_solver" => optimizer_with_attributes(
-                    Gurobi.Optimizer,
-                    MOI.Silent() => true,
-                    "FeasibilityTol" => 1e-8,
-                    "MIPGap" => 1e-6,
-                ),
-                "conic_solver" =>
-                    optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true),
+        if ipp_problem.solver_type == "open"
+            println("HiGHS & Hypatia")
+            model = Model(optimizer_with_attributes(
+                    Pajarito.Optimizer,
+                    "oa_solver" => optimizer_with_attributes(
+                        HiGHS.Optimizer,
+                        MOI.Silent() => true,
+                        "mip_feasibility_tolerance" => 1e-8,
+                        "mip_rel_gap" => 1e-6,
+                    ),
+                    "conic_solver" =>
+                        optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true),
+                )
             )
-        )
+        else
+            println("Gurobi & Mosek")
+            model = Model(
+                optimizer_with_attributes(
+                    Pajarito.Optimizer,
+                    "oa_solver" => optimizer_with_attributes(
+                        Gurobi.Optimizer,
+                        MOI.Silent() => true,
+                        "FeasibilityTol" => 1e-8,
+                        "MIPGap" => 1e-6,
+                    ),
+                    "conic_solver" =>
+                        optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true),
+                )
+            )
+        end
     end
 
     G = ipp_problem.Graph.G
@@ -154,21 +177,44 @@ function run_DIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
     tick()
 
     if relax
-        model = Model(Mosek.Optimizer)
+        if ipp_problem.solver_type == "open"
+            println("Hypatia")
+            model = Model(Hypatia.Optimizer)
+        else
+            println("Mosek")
+            model = Model(Mosek.Optimizer)
+        end
     else
-        model = Model(
-            optimizer_with_attributes(
-                Pajarito.Optimizer,
-                "oa_solver" => optimizer_with_attributes(
-                    Gurobi.Optimizer,
-                    MOI.Silent() => true,
-                    "FeasibilityTol" => 1e-8,
-                    "MIPGap" => 1e-6,
-                ),
-                "conic_solver" =>
-                    optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true),
+        if ipp_problem.solver_type == "open"
+            println("HiGHS & Hypatia")
+            model = Model(optimizer_with_attributes(
+                    Pajarito.Optimizer,
+                    "oa_solver" => optimizer_with_attributes(
+                        HiGHS.Optimizer,
+                        MOI.Silent() => true,
+                        "mip_feasibility_tolerance" => 1e-8,
+                        "mip_rel_gap" => 1e-6,
+                    ),
+                    "conic_solver" =>
+                        optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true),
+                )
             )
-        )
+        else
+            println("Gurobi & Mosek")
+            model = Model(
+                optimizer_with_attributes(
+                    Pajarito.Optimizer,
+                    "oa_solver" => optimizer_with_attributes(
+                        Gurobi.Optimizer,
+                        MOI.Silent() => true,
+                        "FeasibilityTol" => 1e-8,
+                        "MIPGap" => 1e-6,
+                    ),
+                    "conic_solver" =>
+                        optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true),
+                )
+            )
+        end
     end
 
     G = ipp_problem.Graph.G
@@ -282,7 +328,14 @@ end
 ##########################################################################
 function run_BIPP_exact(ipp_problem::IPP, idx)
     tick()
-    model = Model(Gurobi.Optimizer)
+
+    if ipp_problem.solver_type == "open"
+        println("HiGHS")
+        model = Model(HiGHS.Optimizer)
+    else
+        println("Gurobi")
+        model = Model(Gurobi.Optimizer)
+    end
 
     G = ipp_problem.Graph.G
     A = ipp_problem.MeasurementModel.A

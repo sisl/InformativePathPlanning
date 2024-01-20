@@ -20,8 +20,23 @@ function run_d_optimal_sensor_selection(mmipp::MultimodalIPP, path::Vector{Int})
     k_sensors = mmipp.k
     timeout = ipp_problem.solution_time
     
-    model = Model(Mosek.Optimizer)
-
+    if mmipp.ipp_problem.solver_type == "open"
+        model = Model(optimizer_with_attributes(
+            Pajarito.Optimizer,
+            "oa_solver" => optimizer_with_attributes(
+                HiGHS.Optimizer,
+                MOI.Silent() => true,
+                "mip_feasibility_tolerance" => 1e-8,
+                "mip_rel_gap" => 1e-6,
+            ),
+            "conic_solver" =>
+                optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true),
+            )
+        )
+    else
+        model = Model(Mosek.Optimizer)
+    end
+    
     @variable(model, 0 <= s[1:n] <= 1)
     @variable(model, t)
 
@@ -96,7 +111,22 @@ function run_a_optimal_sensor_selection(mmipp::MultimodalIPP, path::Vector{Int})
     k_sensors = mmipp.k
     timeout = ipp_problem.solution_time
     
-    model = Model(Mosek.Optimizer)
+    if mmipp.ipp_problem.solver_type == "open"
+        model = Model(optimizer_with_attributes(
+            Pajarito.Optimizer,
+            "oa_solver" => optimizer_with_attributes(
+                HiGHS.Optimizer,
+                MOI.Silent() => true,
+                "mip_feasibility_tolerance" => 1e-8,
+                "mip_rel_gap" => 1e-6,
+            ),
+            "conic_solver" =>
+                optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => true),
+            )
+        )
+    else
+        model = Model(Mosek.Optimizer)
+    end
 
     @variable(model, 0 <= s[1:n] <= 1)
 
@@ -145,7 +175,7 @@ function run_a_optimal_sensor_selection(mmipp::MultimodalIPP, path::Vector{Int})
     drills = [tuple[1] for tuple in sorted_indices_values]
 
     @show sum(optimal_s[i] for i in path)
-    
+
     # # plot optimal s vs path steps
     # plot(collect(1:length(path)), optimal_s[path], xlabel="Path Step", ylabel="Sensor Weight", label="Sensor Weights", title="Sensor Weights vs Path Steps")
     # # scatter drill locations on top of plot

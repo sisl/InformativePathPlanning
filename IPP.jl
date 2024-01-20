@@ -14,7 +14,8 @@ using Distances
 using Distributions
 using AbstractGPs
 using TickTock
-using Pajarito, Hypatia, HiGHS, MosekTools, Gurobi
+using Pajarito, Hypatia, HiGHS, MosekTools, Gurobi, SCS
+import Hypatia.Cones
 using Parameters
 
 abstract type SolutionMethod end
@@ -55,7 +56,13 @@ end
     objective::String                                                       # A-IPP, D-IPP, expected_improvement
     B::Int                                                                  # budget
     solution_time::Float64                                                  # time allowed to find a solution
-    replan_rate::Int                                                        # replan after replan_rate steps 
+    replan_rate::Int                                                        # replan after replan_rate steps
+    solver_type::String = "commercial"                                    # open or commercial solvers
+end
+
+# Providing a constructor with default value for solver_type
+function IPP(rng::MersenneTwister, n::Int, m::Int, Graph::IPPGraph, MeasurementModel::MeasurementModel, objective::String, B::Int, solution_time::Float64, replan_rate::Int)
+    return IPP(rng, n, m, Graph, MeasurementModel, objective, B, solution_time, replan_rate, "commercial")
 end
 
 @with_kw struct MultiagentIPP

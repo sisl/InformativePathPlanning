@@ -35,6 +35,9 @@ julia> include("run_paper_experiments.jl")
 julia> figure_1()
 ```
 
+# Solver types
+If you don't have access to Mosek and Gurobi licenses, you can specify the solver type as `"open"` inside of the IPP struct. By default, it is set to `"commercial"`.   
+
 # Examples
 Multiagent with obstacles
 
