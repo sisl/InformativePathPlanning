@@ -124,7 +124,7 @@ function solve_dp_orienteering(grid_rewards::Matrix, start::Int, goal::Int, max_
     return dp[start_pos[1], start_pos[2], max_steps + 1], linear_path
 end
 
-function action(ipp_problem::IPP, method::ASPC, gp::AbstractGPs.PosteriorGP, executed_path::Vector{Int64}, y_hist::Vector{Float64})
+function action(ipp_problem::IPP, method::ASPO, gp::AbstractGPs.PosteriorGP, executed_path::Vector{Int64}, y_hist::Vector{Float64})
     n = ipp_problem.n
     n_sqrt = isqrt(n)
     pos = executed_path[end]
@@ -169,7 +169,7 @@ function action(ipp_problem::IPP, method::ASPC, gp::AbstractGPs.PosteriorGP, exe
     return planned_path
 end
 
-function solve(ipp_problem::IPP, method::ASPC)
+function solve(ipp_problem::IPP, method::ASPO)
     """ 
     Takes in IPP problem definition and returns the path and objective value
     using the solution method specified by method.
@@ -215,7 +215,7 @@ function solve(ipp_problem::IPP, method::ASPC)
 end
 
 
-function solve(mipp::MultiagentIPP, method::ASPC, plot_gif=false, centers=[], radii=[])
+function solve(mipp::MultiagentIPP, method::ASPO, plot_gif=false, centers=[], radii=[])
     """
     Takes in MultiagentIPP problem definition and returns the M paths and the objective value
     using the solution method specified by method.

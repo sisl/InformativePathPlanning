@@ -29,8 +29,11 @@ using ColorSchemes
     runtime::Float64
 end
 
+# define ASPC as equivalent to ASPO struct for naming consistency
+ASPC = ASPO
+
 scheme = ColorSchemes.tab10
-aspc_color = scheme[1]
+ASPO_color = scheme[1]
 exact_color = scheme[2]
 mcts_color = scheme[3]
 random_color = scheme[4]
@@ -187,7 +190,7 @@ function figure_2(load_data=false, data_path="data/")
         data = JLD2.load(data_path * "figure_2.jld2", "data")
     else
         data = []
-        methods = [ASPC(), Exact(), trΣ⁻¹(), Greedy(), mcts(), random()]
+        methods = [ASPO(), Exact(), trΣ⁻¹(), Greedy(), mcts(), random()]
 
         p = Progress(length(grid_nodes)*num_sims*length(methods))
 
@@ -250,14 +253,14 @@ function figure_2(load_data=false, data_path="data/")
     exact_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Exact])
     trΣ⁻¹_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == trΣ⁻¹])
     greedy_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Greedy])
-    aspc_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == ASPC])
+    ASPO_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == ASPO])
     mcts_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == mcts])
     random_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == random])
 
     exact_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == Exact], (num_sims, length(exact_xdata)))
     trΣ⁻¹_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == trΣ⁻¹], (num_sims, length(trΣ⁻¹_xdata)))
     greedy_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == Greedy], (num_sims, length(greedy_xdata)))
-    aspc_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == ASPC], (num_sims, length(aspc_xdata)))
+    ASPO_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == ASPO], (num_sims, length(ASPO_xdata)))
     mcts_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == mcts], (num_sims, length(mcts_xdata)))
     random_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == random], (num_sims, length(random_xdata)))
 
@@ -267,7 +270,7 @@ function figure_2(load_data=false, data_path="data/")
     plot!(exact_xdata, mean(exact_ydata, dims=1)', ribbon = std_err(exact_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Exact", color=exact_color, yscale=:log10)
     plot!(trΣ⁻¹_xdata, mean(trΣ⁻¹_ydata, dims=1)', ribbon = std_err(trΣ⁻¹_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "trΣ⁻¹", color=trΣ⁻¹_color, yscale=:log10)
     plot!(greedy_xdata, mean(greedy_ydata, dims=1)', ribbon = std_err(greedy_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Greedy", color=greedy_color, yscale=:log10)
-    plot!(aspc_xdata, mean(aspc_ydata, dims=1)', ribbon = std_err(aspc_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPC", color=aspc_color, yscale=:log10)
+    plot!(ASPO_xdata, mean(ASPO_ydata, dims=1)', ribbon = std_err(ASPO_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPO", color=ASPO_color, yscale=:log10)
     plot!(mcts_xdata, mean(mcts_ydata, dims=1)', ribbon = std_err(mcts_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color, yscale=:log10)
     plot!(random_xdata, mean(random_ydata, dims=1)', ribbon = std_err(random_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", ylabel = "Runtime (seconds)", label = "Random", color=random_color, yscale=:log10)
     rt_plot = plot!(exact_xdata, data[1].timeout .* ones(size(exact_xdata)), label = "Timeout", color=:black, linestyle=:dash, linewidth=4, title="Runtime vs. Graph Size", legend=false, yscale=:log10, dpi=500, widen=false, margin=5mm, size=(600,500), framestyle=:box, ylims=(1e-2, 1e3))
@@ -276,7 +279,7 @@ function figure_2(load_data=false, data_path="data/")
     exact_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == Exact], (num_sims, length(exact_xdata)))
     trΣ⁻¹_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == trΣ⁻¹], (num_sims, length(trΣ⁻¹_xdata)))
     greedy_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == Greedy], (num_sims, length(greedy_xdata)))
-    aspc_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == ASPC], (num_sims, length(aspc_xdata)))
+    ASPO_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == ASPO], (num_sims, length(ASPO_xdata)))
     mcts_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == mcts], (num_sims, length(mcts_xdata)))
     random_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == random], (num_sims, length(random_xdata))) 
     
@@ -284,11 +287,11 @@ function figure_2(load_data=false, data_path="data/")
     plot!(exact_xdata, mean(exact_ydata, dims=1)', ribbon = std_err(exact_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Exact", color=exact_color)
     plot!(trΣ⁻¹_xdata, mean(trΣ⁻¹_ydata, dims=1)', ribbon = std_err(trΣ⁻¹_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "trΣ", color=trΣ⁻¹_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
     plot!(greedy_xdata, mean(greedy_ydata, dims=1)', ribbon = std_err(greedy_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Greedy", color=greedy_color)
-    plot!(aspc_xdata, mean(aspc_ydata, dims=1)', ribbon = std_err(aspc_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPC", color=aspc_color)
+    plot!(ASPO_xdata, mean(ASPO_ydata, dims=1)', ribbon = std_err(ASPO_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPO", color=ASPO_color)
     plot!(mcts_xdata, mean(mcts_ydata, dims=1)', ribbon = std_err(mcts_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color)
     obj_plot = plot!(random_xdata, mean(random_ydata, dims=1)', ribbon = std_err(random_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", ylabel = "tr(Σ)", label = "Random", color=random_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))    
     
-    plot([rt_plot, obj_plot]..., size=(1200, 500), layout=(1,2), margin=8mm, legend=false, widen=false, xticks =[0.0, 5e3, 10e3, 15e3])
+    plot([rt_plot, obj_plot]..., size=(1200, 500), layout=(1,2), margin=8mm, legend=true, widen=false, xticks =[0.0, 5e3, 10e3, 15e3])
     savefig("figures/paper/figure_2/a-ipp.pdf")
 end
 
@@ -314,7 +317,7 @@ function figure_3(load_data=false, data_path="data/")
         data = JLD2.load(data_path * "figure_3.jld2", "data")
     else
         data = []
-        methods = [ASPC(), Exact(), trΣ⁻¹(), Greedy(), mcts(), random()]
+        methods = [ASPO(), Exact(), trΣ⁻¹(), Greedy(), mcts(), random()]
 
         p = Progress(length(grid_nodes)*num_sims*length(methods))
 
@@ -377,14 +380,14 @@ function figure_3(load_data=false, data_path="data/")
     exact_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Exact])
     trΣ⁻¹_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == trΣ⁻¹])
     greedy_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Greedy])
-    aspc_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == ASPC])
+    ASPO_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == ASPO])
     mcts_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == mcts])
     random_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == random])
 
     exact_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == Exact], (num_sims, length(exact_xdata)))
     trΣ⁻¹_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == trΣ⁻¹], (num_sims, length(trΣ⁻¹_xdata)))
     greedy_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == Greedy], (num_sims, length(greedy_xdata)))
-    aspc_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == ASPC], (num_sims, length(aspc_xdata)))
+    ASPO_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == ASPO], (num_sims, length(ASPO_xdata)))
     mcts_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == mcts], (num_sims, length(mcts_xdata)))
     random_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == random], (num_sims, length(random_xdata)))
 
@@ -394,7 +397,7 @@ function figure_3(load_data=false, data_path="data/")
     plot!(exact_xdata, mean(exact_ydata, dims=1)', ribbon = std_err(exact_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Exact", color=exact_color, yscale=:log10)
     plot!(trΣ⁻¹_xdata, mean(trΣ⁻¹_ydata, dims=1)', ribbon = std_err(trΣ⁻¹_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "trΣ⁻¹", color=trΣ⁻¹_color, yscale=:log10)
     plot!(greedy_xdata, mean(greedy_ydata, dims=1)', ribbon = std_err(greedy_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Greedy", color=greedy_color, yscale=:log10)
-    plot!(aspc_xdata, mean(aspc_ydata, dims=1)', ribbon = std_err(aspc_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPC", color=aspc_color, yscale=:log10)
+    plot!(ASPO_xdata, mean(ASPO_ydata, dims=1)', ribbon = std_err(ASPO_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPO", color=ASPO_color, yscale=:log10)
     plot!(mcts_xdata, mean(mcts_ydata, dims=1)', ribbon = std_err(mcts_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color, yscale=:log10)
     plot!(random_xdata, mean(random_ydata, dims=1)', ribbon = std_err(random_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", ylabel = "Runtime (seconds)", label = "Random", color=random_color, yscale=:log10)
     rt_plot = plot!(exact_xdata, data[1].timeout .* ones(size(exact_xdata)), label = "Timeout", color=:black, linestyle=:dash, linewidth=4, title="Runtime vs. Graph Size", legend=false, yscale=:log10, dpi=500, widen=false, margin=5mm, size=(600,500), framestyle=:box, ylims=(1e-2, 1e3))
@@ -403,7 +406,7 @@ function figure_3(load_data=false, data_path="data/")
     exact_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == Exact], (num_sims, length(exact_xdata)))
     trΣ⁻¹_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == trΣ⁻¹], (num_sims, length(trΣ⁻¹_xdata)))
     greedy_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == Greedy], (num_sims, length(greedy_xdata)))
-    aspc_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == ASPC], (num_sims, length(aspc_xdata)))
+    ASPO_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == ASPO], (num_sims, length(ASPO_xdata)))
     mcts_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == mcts], (num_sims, length(mcts_xdata)))
     random_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == random], (num_sims, length(random_xdata))) 
     
@@ -411,7 +414,7 @@ function figure_3(load_data=false, data_path="data/")
     plot!(exact_xdata, mean(exact_ydata, dims=1)', ribbon = std_err(exact_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Exact", color=exact_color)
     plot!(trΣ⁻¹_xdata, mean(trΣ⁻¹_ydata, dims=1)', ribbon = std_err(trΣ⁻¹_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "trΣ", color=trΣ⁻¹_color, title="logdet(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
     plot!(greedy_xdata, mean(greedy_ydata, dims=1)', ribbon = std_err(greedy_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Greedy", color=greedy_color)
-    plot!(aspc_xdata, mean(aspc_ydata, dims=1)', ribbon = std_err(aspc_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPC", color=aspc_color)
+    plot!(ASPO_xdata, mean(ASPO_ydata, dims=1)', ribbon = std_err(ASPO_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPO", color=ASPO_color)
     plot!(mcts_xdata, mean(mcts_ydata, dims=1)', ribbon = std_err(mcts_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color)
     obj_plot = plot!(random_xdata, mean(random_ydata, dims=1)', ribbon = std_err(random_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Random", color=random_color, ylabel= "logdet(Σ)", title="logdet(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))    
     
@@ -467,7 +470,7 @@ function figure_4(load_data=false, data_path="data/")
     σ_min = 1e-5
     k = 3
     mmipp = MultimodalIPP(ipp_problem, σ_min, σ_max, k)    
-    methods = [trΣ⁻¹()]#[ASPC(), Exact(), trΣ⁻¹(), Greedy(), mcts(), random()]
+    methods = [ASPO(), Exact(), trΣ⁻¹(), Greedy(), mcts(), random()]
 
     plts = []
     for (method_idx, method) in enumerate(methods)
@@ -478,7 +481,7 @@ function figure_4(load_data=false, data_path="data/")
 
         # Plot the trajectory problem
         plt = plot_trajectory(mmipp, path, objective_value, drills, t, "figures/paper/figure_4/$(typeof(method))_$(n)n_$(obj).pdf")
-        title = typeof(method) == ASPC ? "ASPC" : typeof(method) == Exact ? "Exact" : typeof(method) == trΣ⁻¹ ? "trΣ" : typeof(method) == Greedy ? "Greedy" : typeof(method) == mcts ? "MCTS" : "Random"
+        title = typeof(method) == ASPO ? "ASPO" : typeof(method) == Exact ? "Exact" : typeof(method) == trΣ⁻¹ ? "trΣ" : typeof(method) == Greedy ? "Greedy" : typeof(method) == mcts ? "MCTS" : "Random"
         plt = plot!(title=title, legend=false, titlefontsize=48)
         savefig("figures/paper/figure_4/runs/$(title).pdf")
         push!(plts, plt)
@@ -621,7 +624,7 @@ function figure_5(load_data=false, data_path="data/")
 
         title = obj == "A-IPP" ? "tr(Σ) vs. Graph Size" : "logdet(Σ) vs. Graph Size"
         plot(xdata, mcts_mean_obj_hist, ribbon = mcts_std_err_obj_hist, fillalpha = 0.2, label="MCTS", title=title, color=mcts_color, color_palette=:tab10, framestyle=:box)
-        plt_obj = plot!(xdata, cvx_mean_obj_hist, ribbon = cvx_std_err_obj_hist, fillalpha = 0.2, label="Convex", title=title, color=aspc_color, color_palette=:tab10, framestyle=:box, legend=false, widen=false, size=(600,500), margin=5mm, xticks=[0.0, 5e3, 10e3, 15e3])
+        plt_obj = plot!(xdata, cvx_mean_obj_hist, ribbon = cvx_std_err_obj_hist, fillalpha = 0.2, label="Convex", title=title, color=ASPO_color, color_palette=:tab10, framestyle=:box, legend=false, widen=false, size=(600,500), margin=5mm, xticks=[0.0, 5e3, 10e3, 15e3])
         push!(plts, plt_obj)
     end
     plot(plts..., layout=(1,2), size=(1200, 500), margin=8mm, legend=false, widen=false)
@@ -654,7 +657,7 @@ function figure_6(load_data=false, data_path="data/")
             data = JLD2.load(data_path * "figure_6_$(obj).jld2", "data")
         else
             data = []
-            methods = [ASPC()]
+            methods = [ASPO()]
     
             p = Progress(length(budgets)*num_sims*length(methods))
 
@@ -728,12 +731,12 @@ function figure_6(load_data=false, data_path="data/")
 
         if obj == "A-IPP"
             δ = (1/m)*(upper_bound - lower_bound) ./ ((1/m)*lower_bound)
-            plot(xdata ./ edge_length, (mean(δ, dims=1)'), ribbon = (std_err(δ, num_sims)), fillalpha = 0.2, xlabel = "Budget", title=title, label = "Gap", color=aspc_color, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm)
+            plot(xdata ./ edge_length, (mean(δ, dims=1)'), ribbon = (std_err(δ, num_sims)), fillalpha = 0.2, xlabel = "Budget", title=title, label = "Gap", color=ASPO_color, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm)
             # plot!(xdata ./ edge_length, (mean(upper_bound, dims=1)' - mean(lower_bound, dims=1)') ./ abs.(mean(lower_bound, dims=1)'), ribbon = (std_err(upper_bound, num_sims) - std_err(lower_bound, num_sims)) ./ abs.(mean(lower_bound, dims=1)'), fillalpha = 0.2, xlabel = "Budget", ylabel = "Gap", title=title, label = "Gap", color=:red, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm)
         else
             δ = (1/m)*(upper_bound - lower_bound)
-            plot(xdata ./ edge_length,  (mean(exp.(δ), dims=1)') , ribbon = std_err(exp.(δ), num_sims), fillalpha = 0.2, xlabel = "Budget", title=title, label = "Gap", color=aspc_color, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm, ylims=(1.0, maximum(mean(exp.(δ), dims=1)')))
-            # plot(xdata ./ edge_length, exp.( (1/m) * (mean(upper_bound, dims=1)' - mean(lower_bound, dims=1)' )), ribbon = exp.( (1/m) * (std_err(upper_bound, num_sims) - std_err(lower_bound, num_sims))), fillalpha = 0.2, xlabel = "Budget", ylabel = "Gap", title=title, label = "Gap", color=aspc_color, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm)
+            plot(xdata ./ edge_length,  (mean(exp.(δ), dims=1)') , ribbon = std_err(exp.(δ), num_sims), fillalpha = 0.2, xlabel = "Budget", title=title, label = "Gap", color=ASPO_color, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm, ylims=(1.0, maximum(mean(exp.(δ), dims=1)')))
+            # plot(xdata ./ edge_length, exp.( (1/m) * (mean(upper_bound, dims=1)' - mean(lower_bound, dims=1)' )), ribbon = exp.( (1/m) * (std_err(upper_bound, num_sims) - std_err(lower_bound, num_sims))), fillalpha = 0.2, xlabel = "Budget", ylabel = "Gap", title=title, label = "Gap", color=ASPO_color, legend=false, framestyle=:box, widen=false, size=(600,500), margin=5mm)
         end
 
         if obj == "A-IPP"
@@ -783,14 +786,14 @@ function figure_7(load_data=false, data_path="data/")
         exact_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Exact])
         trΣ⁻¹_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == trΣ⁻¹])
         greedy_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == Greedy])
-        aspc_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == ASPC])
+        ASPO_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == ASPO])
         mcts_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == mcts])
         random_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == random])
         
         exact_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == Exact], (num_sims, length(exact_xdata)))
         trΣ⁻¹_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == trΣ⁻¹], (num_sims, length(trΣ⁻¹_xdata)))
         greedy_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == Greedy], (num_sims, length(greedy_xdata)))
-        aspc_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == ASPC], (num_sims, length(aspc_xdata)))
+        ASPO_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == ASPO], (num_sims, length(ASPO_xdata)))
         mcts_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == mcts], (num_sims, length(mcts_xdata)))
         random_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == random], (num_sims, length(random_xdata))) 
         
@@ -798,14 +801,14 @@ function figure_7(load_data=false, data_path="data/")
         plot!(exact_xdata, mean(exact_ydata, dims=1)', ribbon = std_err(exact_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Exact", color=exact_color)
         plot!(trΣ⁻¹_xdata, mean(trΣ⁻¹_ydata, dims=1)', ribbon = std_err(trΣ⁻¹_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "trΣ", color=trΣ⁻¹_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
         plot!(greedy_xdata, mean(greedy_ydata, dims=1)', ribbon = std_err(greedy_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Greedy", color=greedy_color)
-        plot!(aspc_xdata, mean(aspc_ydata, dims=1)', ribbon = std_err(aspc_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPC", color=aspc_color)
+        plot!(ASPO_xdata, mean(ASPO_ydata, dims=1)', ribbon = std_err(ASPO_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPO", color=ASPO_color)
         plot!(mcts_xdata, mean(mcts_ydata, dims=1)', ribbon = std_err(mcts_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color)
         unrefined_plt = plot!(random_xdata, mean(random_ydata, dims=1)', ribbon = std_err(random_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Random", color=random_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
         
         exact_ydata_ref = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == Exact], (num_sims, length(exact_xdata)))
         trΣ⁻¹_ydata_ref = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == trΣ⁻¹], (num_sims, length(trΣ⁻¹_xdata)))
         greedy_ydata_ref = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == Greedy], (num_sims, length(greedy_xdata)))
-        aspc_ydata_ref = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == ASPC], (num_sims, length(aspc_xdata)))
+        ASPO_ydata_ref = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == ASPO], (num_sims, length(ASPO_xdata)))
         mcts_ydata_ref = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == mcts], (num_sims, length(mcts_xdata)))
         random_ydata_ref = reshape([refined_data[i].objVal for i in 1:length(refined_data) if typeof(refined_data[i].run_type) == random], (num_sims, length(random_xdata)))
 
@@ -813,7 +816,7 @@ function figure_7(load_data=false, data_path="data/")
         plot!(exact_xdata, mean(exact_ydata_ref, dims=1)', ribbon = std_err(exact_ydata_ref, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Exact", color=exact_color)
         plot!(trΣ⁻¹_xdata, mean(trΣ⁻¹_ydata_ref, dims=1)', ribbon = std_err(trΣ⁻¹_ydata_ref, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "trΣ", color=trΣ⁻¹_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
         plot!(greedy_xdata, mean(greedy_ydata_ref, dims=1)', ribbon = std_err(greedy_ydata_ref, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Greedy", color=greedy_color)
-        plot!(aspc_xdata, mean(aspc_ydata_ref, dims=1)', ribbon = std_err(aspc_ydata_ref, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPC", color=aspc_color)
+        plot!(ASPO_xdata, mean(ASPO_ydata_ref, dims=1)', ribbon = std_err(ASPO_ydata_ref, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPO", color=ASPO_color)
         plot!(mcts_xdata, mean(mcts_ydata_ref, dims=1)', ribbon = std_err(mcts_ydata_ref, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color)
         refined_plt = plot!(random_xdata, mean(random_ydata_ref, dims=1)', ribbon = std_err(random_ydata_ref, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Random", color=random_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
 
@@ -829,7 +832,7 @@ function figure_7(load_data=false, data_path="data/")
         exact_avg_improvement = mean(exact_ydata_ref - exact_ydata, dims=1)
         trΣ⁻¹_avg_improvement = mean(trΣ⁻¹_ydata_ref - trΣ⁻¹_ydata, dims=1)
         greedy_avg_improvement = mean(greedy_ydata_ref - greedy_ydata, dims=1)
-        aspc_avg_improvement = mean(aspc_ydata_ref - aspc_ydata, dims=1)
+        ASPO_avg_improvement = mean(ASPO_ydata_ref - ASPO_ydata, dims=1)
         mcts_avg_improvement = mean(mcts_ydata_ref - mcts_ydata, dims=1)
         random_avg_improvement = mean(random_ydata_ref - random_ydata, dims=1)
 
@@ -837,7 +840,7 @@ function figure_7(load_data=false, data_path="data/")
         plot!(exact_xdata, exact_avg_improvement', xlabel = "Number of Graph Nodes", label = "Exact", color=exact_color)
         plot!(trΣ⁻¹_xdata, trΣ⁻¹_avg_improvement',xlabel = "Number of Graph Nodes", label = "trΣ", color=trΣ⁻¹_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
         plot!(greedy_xdata, greedy_avg_improvement',  xlabel = "Number of Graph Nodes", label = "Greedy", color=greedy_color)
-        plot!(aspc_xdata, aspc_avg_improvement', xlabel = "Number of Graph Nodes", label = "ASPC", color=aspc_color)
+        plot!(ASPO_xdata, ASPO_avg_improvement', xlabel = "Number of Graph Nodes", label = "ASPO", color=ASPO_color)
         plot!(mcts_xdata, mcts_avg_improvement', xlabel = "Number of Graph Nodes", label = "MCTS", color=mcts_color)
         avg_improvement_plt = plot!(random_xdata, random_avg_improvement', xlabel = "Number of Graph Nodes", label = "Random", color=random_color, title="tr(Σ) vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
 
@@ -845,7 +848,7 @@ function figure_7(load_data=false, data_path="data/")
         exact_avg_improvement = reshape(exact_avg_improvement, (length(exact_avg_improvement),))
         trΣ⁻¹_avg_improvement = reshape(trΣ⁻¹_avg_improvement, (length(trΣ⁻¹_avg_improvement),))
         greedy_avg_improvement = reshape(greedy_avg_improvement, (length(greedy_avg_improvement),))
-        aspc_avg_improvement = reshape(aspc_avg_improvement, (length(aspc_avg_improvement),))
+        ASPO_avg_improvement = reshape(ASPO_avg_improvement, (length(ASPO_avg_improvement),))
         mcts_avg_improvement = reshape(mcts_avg_improvement, (length(mcts_avg_improvement),))
         random_avg_improvement = reshape(random_avg_improvement, (length(random_avg_improvement),))
 
@@ -857,18 +860,18 @@ function figure_7(load_data=false, data_path="data/")
             bar_plot = bar!(random_xdata .- 0.5*bar_width, random_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=random_color, bar_width=bar_width, label="Random", linewidth=2)
             bar_plot = bar!(trΣ⁻¹_xdata .+ 0.5*bar_width, trΣ⁻¹_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=trΣ⁻¹_color, bar_width=bar_width, label="trΣ", linewidth=2)
             bar_plot = bar!(exact_xdata .+ 1.5*bar_width, exact_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=exact_color, bar_width=bar_width, label="Exact", linewidth=2)
-            bar_plot = bar!(aspc_xdata .+ 2.5*bar_width, aspc_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=aspc_color, bar_width=bar_width, xticks=[0.0, 5e3, 10e3, 15e3], label="ASPC", linewidth=2)
+            bar_plot = bar!(ASPO_xdata .+ 2.5*bar_width, ASPO_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=ASPO_color, bar_width=bar_width, xticks=[0.0, 5e3, 10e3, 15e3], label="ASPO", linewidth=2)
             # Additional aesthetics and settings
-            bar_plot = plot!(title=obj, framestyle=:box, margin=5mm, widen=false, xlims=(5e3, 123^2+3.1*bar_width), ylims=(minimum(aspc_avg_improvement)-0.01, 0.0), linewidth=2)
+            bar_plot = plot!(title=obj, framestyle=:box, margin=5mm, widen=false, xlims=(5e3, 123^2+3.1*bar_width), ylims=(minimum(ASPO_avg_improvement)-0.01, 0.0), linewidth=2)
         else
             bar_plot = bar(trΣ⁻¹_xdata .- 2.5*bar_width, trΣ⁻¹_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=trΣ⁻¹_color, bar_width=bar_width, label="trΣ", linewidth=2)
             bar_plot = bar!(greedy_xdata .- 1.5*bar_width, greedy_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=greedy_color, bar_width=bar_width, label="Greedy", linewidth=2)
             bar_plot = bar!(mcts_xdata .-0.5*bar_width, mcts_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=mcts_color, bar_width=bar_width, label="MCTS", linewidth=2)
             bar_plot = bar!(random_xdata .+ 0.5*bar_width, random_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=random_color, bar_width=bar_width, label="Random", linewidth=2)
             bar_plot = bar!(exact_xdata .+ 1.5*bar_width, exact_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=exact_color, bar_width=bar_width, label="Exact", linewidth=2)
-            bar_plot = bar!(aspc_xdata .+ 2.5*bar_width, aspc_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=aspc_color, bar_width=bar_width, xticks=[0.0, 5e3, 10e3, 15e3], label="ASPC", linewidth=2)
+            bar_plot = bar!(ASPO_xdata .+ 2.5*bar_width, ASPO_avg_improvement, legend=false, xlabel="Number of Graph Nodes", ylabel="Improvement", color=ASPO_color, bar_width=bar_width, xticks=[0.0, 5e3, 10e3, 15e3], label="ASPO", linewidth=2)
             # Additional aesthetics and settings
-            bar_plot = plot!(title=obj, framestyle=:box, margin=5mm, widen=false, xlims=(5e3, 123^2+3.1*bar_width), ylims=(minimum(aspc_avg_improvement)-0.01, 0.0))
+            bar_plot = plot!(title=obj, framestyle=:box, margin=5mm, widen=false, xlims=(5e3, 123^2+3.1*bar_width), ylims=(minimum(ASPO_avg_improvement)-0.01, 0.0))
         end
 
         if obj == "A-IPP"
@@ -908,7 +911,7 @@ function figure_9(load_data=false, data_path="data/")
         data = JLD2.load(data_path * "figure_9.jld2", "data")
     else
         data = []
-        methods = [Greedy(), ASPC(), random(), mcts()]
+        methods = [Greedy(), ASPO(), random(), mcts()]
 
         p = Progress(length(grid_nodes)*num_sims*length(methods))
 
@@ -978,7 +981,7 @@ function figure_9(load_data=false, data_path="data/")
         plot()
 
         min_plot_length = minimum([length(data[i].EI_hist) for i in 1:length(data) if data[i].n == N])
-        for run_type in [random, Greedy, mcts, ASPC]
+        for run_type in [random, Greedy, mcts, ASPO]
             EI_hist = [data[i].EI_hist for i in 1:length(data) if typeof(data[i].run_type) == run_type && data[i].n == N]
 
             max_length = maximum([length(EI_hist[i]) for i in 1:length(EI_hist)])
@@ -990,8 +993,8 @@ function figure_9(load_data=false, data_path="data/")
             mean_EI = reshape(mean(hcat(EI_hist...), dims=2), (max_length,))
             std_err_EI = reshape(std_err(hcat(EI_hist...)', num_sims), (max_length,))
 
-            color = run_type == ASPC ? aspc_color : run_type == Exact ? exact_color : run_type == mcts ? mcts_color : run_type == random ? random_color : run_type == Greedy ? greedy_color : run_type == DuttaMIP ? mip_color : run_type == trΣ⁻¹ ? trΣ⁻¹_color : relaxed_color
-            label = run_type == ASPC ? "ASPC" : run_type == Exact ? "Exact" : run_type == mcts ? "MCTS" : run_type == random ? "Random" : run_type == Greedy ? "Greedy" : run_type == DuttaMIP ? "Dutta MIP" : run_type == trΣ⁻¹ ? "TrΣ⁻¹" : relaxed_color
+            color = run_type == ASPO ? ASPO_color : run_type == Exact ? exact_color : run_type == mcts ? mcts_color : run_type == random ? random_color : run_type == Greedy ? greedy_color : run_type == DuttaMIP ? mip_color : run_type == trΣ⁻¹ ? trΣ⁻¹_color : relaxed_color
+            label = run_type == ASPO ? "ASPO" : run_type == Exact ? "Exact" : run_type == mcts ? "MCTS" : run_type == random ? "Random" : run_type == Greedy ? "Greedy" : run_type == DuttaMIP ? "Dutta MIP" : run_type == trΣ⁻¹ ? "TrΣ⁻¹" : relaxed_color
             plot!(mean_EI[1:min_plot_length] ./ m, ribbon = std_err_EI[1:min_plot_length] ./m, fillalpha = 0.2, label=label, title="N = $N", color=color, color_palette=:tab10, framestyle=:box, widen=false)
             # plot!(mean_EI[1:min_plot_length] ./ N, ribbon = std_err_EI[1:min_plot_length] ./N, fillalpha = 0.2, label=label, title="N = $N", color=color, color_palette=:tab10, framestyle=:box, widen=false)
         end
@@ -1003,11 +1006,4 @@ function figure_9(load_data=false, data_path="data/")
     savefig("figures/paper/figure_9/expected_improvement.pdf")
 end
 
-# figure_1()
-# figure_2()
-# figure_3()
-# figure_4()
-# figure_5()
-# figure_6()
-# figure_7()
-# figure_9(true)
+figure_4(true)

@@ -43,7 +43,7 @@ function run_multimodal_example()
     mmipp = MultimodalIPP(ipp_problem, σ_min, σ_max, k)
 
     # Solve the IPP problem
-    val, t = @timed solve(mmipp, ASPC())
+    val, t = @timed solve(mmipp, ASPO())
     path, drills, objective_value = val
 
     # Plot the IPP problem

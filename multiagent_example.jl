@@ -45,7 +45,7 @@ function run_multiagent_example()
     mipp = MultiagentIPP(ipp_problem, M)
 
     # Solve the IPP problem
-    paths, t = @timed solve(mipp, ASPC(), plot_gif, centers, radii)
+    paths, t = @timed solve(mipp, ASPO(), plot_gif, centers, radii)
 end
 
 run_multiagent_example()

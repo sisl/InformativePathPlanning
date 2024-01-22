@@ -19,7 +19,7 @@ import Hypatia.Cones
 using Parameters
 
 abstract type SolutionMethod end
-struct ASPC <: SolutionMethod end
+struct ASPO <: SolutionMethod end
 struct Greedy <: SolutionMethod end
 struct mcts <: SolutionMethod end
 struct Exact <: SolutionMethod end
@@ -79,7 +79,7 @@ end
 
 include("utilities/build_graph.jl")
 include("utilities/utilities.jl")
-include("methods/ASPC.jl")
+include("methods/aspo.jl")
 include("methods/greedy.jl")
 include("methods/exact.jl")
 include("methods/dutta_mip.jl")
@@ -91,14 +91,14 @@ function solve(ipp_problem::MultiagentIPP)
     """ 
     Takes in MultiagentIPP problem definition and returns M paths and the objective value.
     """
-    return solve(ipp_problem, ASPC())
+    return solve(ipp_problem, ASPO())
 end
 
 function solve(ipp_problem::MultimodalIPP)
     """ 
     Takes in MultimodalIPP problem definition and returns path and the objective value.
     """
-    return solve(ipp_problem, ASPC())
+    return solve(ipp_problem, ASPO())
 end
 
 function solve(mmipp::MultimodalIPP, method::SolutionMethod)
@@ -122,7 +122,7 @@ function solve(ipp_problem::IPP)
     """ 
     Takes in IPP problem definition and returns the path and objective value.
     """
-    return solve(ipp_problem, ASPC())
+    return solve(ipp_problem, ASPO())
 end
 
 function relax(ipp_problem::IPP)

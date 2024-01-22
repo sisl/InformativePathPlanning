@@ -41,7 +41,7 @@ If you don't have access to Mosek and Gurobi licenses, you can specify the solve
 # Examples
 Trajectories generated from each of the methods and baselines with `n=625` graph nodes and `m=20` prediction locations. This example also includes multimodal sensor selection where the yellow points indicate more accurate sensing measurements. 
 <p align="center">
-  <img alt="Variance" src="https://github.com/sisl/InformativePathPlanning/blob/main/img/trajectories.png" width="75%">
+  <img alt="Variance" src="https://github.com/sisl/InformativePathPlanning/blob/main/img/trajectories.png" width="100%">
 </p>
 
 Multiagent with obstacles
