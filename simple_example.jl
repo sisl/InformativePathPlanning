@@ -38,7 +38,7 @@ function run_simple_example()
     ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, solution_time, replan_rate, "open")
 
     # Solve the IPP problem
-    val, t = @timed solve(ipp_problem, Exact())
+    val, t = @timed solve(ipp_problem, ASPO())
     path, objective_value = val
 
     @show relax(ipp_problem)
