@@ -24,6 +24,7 @@ To reproduce the figures from the paper:
 ```julia
 julia> run_paper_experiments()
 ```
+Note that the `data` and `figures` directories are included by default so that you do not have to create them before running the paper experiments. 
 
 # Solver types
 If you don't have access to Mosek and Gurobi licenses, you can specify the solver type as `"open"` inside of the IPP struct. By default, it is set to `"commercial"`.   
