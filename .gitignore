@@ -8,17 +8,17 @@ data/maps/*.jld2
 data/maps/*.jld
 data/maps/*.png
 
-figures/paper/figure_1/runs/*
-figures/paper/figure_2/runs/*
-figures/paper/figure_3/runs/*
-figures/paper/figure_4/runs/*
-figures/paper/figure_5/A-IPP_runs/*
-figures/paper/figure_5/D-IPP_runs/*
-figures/paper/figure_6/A-IPP_runs/*
-figures/paper/figure_6/D-IPP_runs/*
-figures/paper/figure_7/runs/*
-figures/paper/figure_8/runs/*
-figures/paper/figure_9/runs/*
+figures/paper/figure_1/runs/*.pdf
+figures/paper/figure_1/runs/oldruns/*
+figures/paper/figure_2/runs/*.pdf
+figures/paper/figure_3/runs/*.pdf
+figures/paper/figure_4/runs/*.pdf
+figures/paper/figure_5/A-IPP_runs/*.pdf
+figures/paper/figure_5/D-IPP_runs/*.pdf
+figures/paper/figure_6/A-IPP_runs/*.pdf
+figures/paper/figure_6/D-IPP_runs/*.pdf
+figures/paper/figure_7/runs/*.pdf
+figures/paper/figure_9/runs/*.pdf
 
 figures/paper/figure_1/*.pdf
 figures/paper/figure_2/*.pdf
