@@ -5,23 +5,23 @@ We consider the problem of finding an informative path through a graph, given in
 # Instructions
 
 Use the julia package manager to add the InformativePathPlanning module:: 
-```
+```julia 
 ] add https://github.com/josh0tt/InformativePathPlanning.git
 using InformativePathPlanning
 ```
 
 To run the simple example:
-```
+```julia
 julia> run_simple_example()
 ```
 
 To run the multiagent example:
-```
+```julia
 julia> run_multiagent_example()
 ```
 
 To reproduce the figures from the paper:
-```
+```julia
 julia> run_paper_experiments()
 ```
 
