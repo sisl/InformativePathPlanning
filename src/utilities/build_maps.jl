@@ -1,5 +1,4 @@
 using JLD2
-using Distributed
 using Random
 using Statistics
 using Distributions
