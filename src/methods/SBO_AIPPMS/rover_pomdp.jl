@@ -1,6 +1,6 @@
 using POMDPModels, POMDPs, POMDPPolicies
-using StaticArrays, Parameters, Random, POMDPModelTools, Distributions
-using Images, LinearAlgebra, Printf
+using Parameters, Random, POMDPModelTools, Distributions
+using LinearAlgebra, Printf
 using Plots
 using StatsBase
 using BasicPOMCP

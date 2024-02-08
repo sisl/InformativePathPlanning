@@ -1,9 +1,7 @@
-include("IPP.jl")
-import Hypatia.Cones
-
 function run_simple_example()
-    data_path = "/Users/joshuaott/InformativePathPlanning/data/"
-    rng = MersenneTwister(12345)
+    # data_path is one directory up from the current directory lets use .. to go up one directory
+    data_path = "../data/"
+    rng = Random.MersenneTwister(12345)
 
     n = 10^2
     m = 20
@@ -14,7 +12,7 @@ function run_simple_example()
     B = 4*edge_length
     solution_time = 120.0
     replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))
-    true_map = rand(rng, isqrt(n), isqrt(n))
+    true_map = Random.rand(rng, isqrt(n), isqrt(n))
 
     # Generate a grid graph
     Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective)
@@ -47,5 +45,3 @@ function run_simple_example()
     plot(ipp_problem, path, objective_value, t)
 
 end
-
-run_simple_example()

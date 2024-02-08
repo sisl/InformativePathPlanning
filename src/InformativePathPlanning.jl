@@ -1,3 +1,5 @@
+module InformativePathPlanning
+
 using JuMP
 using Random
 using LinearAlgebra
@@ -86,6 +88,7 @@ include("methods/dutta_mip.jl")
 include("methods/mcts.jl")
 include("utilities/plotting.jl")
 include("multimodal_sensor_selection.jl")
+include("utilities/build_maps.jl")
 
 function solve(ipp_problem::MultiagentIPP)
     """ 
@@ -136,3 +139,29 @@ function relax(ipp_problem::IPP)
         return lower_bound
     end
 end
+
+include("simple_example.jl")
+include("multiagent_example.jl")
+include("multimodal_example.jl")
+
+export IPPGraph, 
+       MeasurementModel, 
+       IPP, 
+       MultiagentIPP, 
+       MultimodalIPP, 
+       ASPO, 
+       Greedy, 
+       mcts, 
+       Exact, 
+       trΣ⁻¹, 
+       random, 
+       DuttaMIP, 
+       solve, 
+       relax, 
+       run_simple_example, 
+       build_graph, 
+       run_multiagent_example, 
+       run_multimodal_example,
+       build_maps
+
+end 

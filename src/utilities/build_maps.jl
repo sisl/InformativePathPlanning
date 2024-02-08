@@ -151,19 +151,16 @@ function build_gp_map(rng::Random.AbstractRNG, G::Vector{Vector{Int64}}, N::Int,
     return true_map
 end
 
-# build_rand_maps()
-# build_gp_maps()
-# build_large_maps()
-
-# Uncomment below to build maps
-for n in collect(123:-12:4).^2#collect(10:-1:2).^2#collect(100:-10:4).^2
-    edge_length = 1#100
-    m = 20
-    # NOTE: we can use different length scales here for map generation
-    L = 0.08*edge_length
-    rng = MersenneTwister(1234567)
-    num_sims = 25
-    G, Theta, Omega = build_G_Theta_Omega(rng, n, m, edge_length)
-    # G, Theta, Omega = build_graph(rng, N, 20)
-    build_gp_maps(rng, G, n, num_sims, Theta, L, "/Users/joshuaott/InformativePathPlanning/data/maps/")
+function build_maps()
+    for n in collect(123:-12:4).^2#collect(10:-1:2).^2#collect(100:-10:4).^2
+        edge_length = 1#100
+        m = 20
+        # NOTE: we can use different length scales here for map generation
+        L = 0.08*edge_length
+        rng = MersenneTwister(1234567)
+        num_sims = 25
+        G, Theta, Omega = build_G_Theta_Omega(rng, n, m, edge_length)
+        # G, Theta, Omega = build_graph(rng, N, 20)
+        build_gp_maps(rng, G, n, num_sims, Theta, L, "../../data/maps/")
+    end
 end

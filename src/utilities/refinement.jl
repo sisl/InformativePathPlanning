@@ -50,7 +50,7 @@ function run_swap_abstractgp(ipp_problem::IPP, G_dict, path::Vector{Int}, iter::
 end
 
 
-function run_refinement(rng, data, obj, data_path="/Users/joshuaott/InformativePathPlanning/data")
+function run_refinement(rng, data, obj, data_path="../../data")
 
     if obj != "A-IPP" && obj != "D-IPP"
         error("objective must be either A or D-IPP")

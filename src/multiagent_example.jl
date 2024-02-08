@@ -1,10 +1,8 @@
-include("IPP.jl")
-
 function run_multiagent_example()
-    data_path = "/Users/joshuaott/InformativePathPlanning/data/"
+    data_path = "../data/"
     rng = MersenneTwister(123456)
 
-    plot_gif = true
+    plot_gif = false
     obstacles = true
     M = 3 # number of agents 
     n = 20^2
@@ -47,5 +45,3 @@ function run_multiagent_example()
     # Solve the IPP problem
     paths, t = @timed solve(mipp, ASPO(), plot_gif, centers, radii)
 end
-
-run_multiagent_example()

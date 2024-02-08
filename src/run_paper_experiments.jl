@@ -1,5 +1,6 @@
-include("IPP.jl")
-include("utilities/refinement.jl")
+# # include("IPP.jl")
+# # include("utilities/refinement.jl")
+# using InformativePathPlanning
 
 using JLD2
 using Plots
@@ -56,7 +57,7 @@ end
 #####################################################################################
 # Figure 1
 #####################################################################################
-function figure_1(load_data=false, data_path="data/")
+function figure_1(load_data=false, data_path = "../data/")
     """
     Runtime and A-IPP objective as a function of the graph size. We compare 
     the MIP formulation of Dutta et al. with our exact MIP formulation and
@@ -171,7 +172,7 @@ end
 #####################################################################################
 # Figure 2
 #####################################################################################
-function figure_2(load_data=false, data_path="data/")
+function figure_2(load_data=false, data_path = "../data/")
     """
     Runtime and A-IPP objective as a function of the graph size.
     """
@@ -298,7 +299,7 @@ end
 #####################################################################################
 # Figure 3
 #####################################################################################
-function figure_3(load_data=false, data_path="data/")
+function figure_3(load_data=false, data_path = "../data/")
     """
     Runtime and D-IPP objective as a function of the graph size.
     """
@@ -425,7 +426,7 @@ end
 #####################################################################################
 # Figure 4
 #####################################################################################
-function figure_4(load_data=false, data_path="data/")
+function figure_4(load_data=false, data_path = "../data/")
     """
     Create plot showing trajectories for each of the methods with obstacles included.
     """
@@ -501,7 +502,7 @@ struct Fig5Data
     cvx_objective::Float64
 end
 
-function figure_5(load_data=false, data_path="data/")
+function figure_5(load_data=false, data_path = "../data/")
     """
     Multimodal sensing comparison between MCTS and proposed approach.
     """
@@ -636,7 +637,7 @@ end
 #####################################################################################
 # Figure 6
 #####################################################################################
-function figure_6(load_data=false, data_path="data/")
+function figure_6(load_data=false, data_path = "../data/")
     """
     Computes optimality gap for both the A and D-IPP objectives
     """
@@ -753,7 +754,7 @@ end
 #####################################################################################
 # Figure 7
 #####################################################################################
-function figure_7(load_data=false, data_path="data/")
+function figure_7(load_data=false, data_path = "../data/")
     """
     Performs greedy swapping procedure as outlined by Joshi and Boyd
     """
@@ -890,7 +891,7 @@ end
 #####################################################################################
 # Figure 9
 #####################################################################################
-function figure_9(load_data=false, data_path="data/")
+function figure_9(load_data=false, data_path = "../data/")
     """
     Runtime and Expected Improvement adaptive objective as a function of the graph size.
     """
@@ -1005,5 +1006,3 @@ function figure_9(load_data=false, data_path="data/")
    
     savefig("figures/paper/figure_9/expected_improvement.pdf")
 end
-
-figure_4(true)

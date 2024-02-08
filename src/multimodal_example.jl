@@ -1,7 +1,7 @@
-include("IPP.jl")
+# using InformativePathPlanning
 
 function run_multimodal_example()
-    data_path = "/Users/joshuaott/InformativePathPlanning/data/"
+    data_path = "../data/"
     rng = MersenneTwister(12345)
 
     n = 10^2
@@ -50,5 +50,3 @@ function run_multimodal_example()
     plot(mmipp, path, drills, objective_value, t)
 
 end
-
-run_multimodal_example()
