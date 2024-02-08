@@ -4,35 +4,25 @@ We consider the problem of finding an informative path through a graph, given in
 
 # Instructions
 
-Clone the repository: 
+Use the julia package manager to add the InformativePathPlanning module:: 
 ```
-git clone https://github.com/josh0tt/InformativePathPlanning.git
-```
-
-Navigate to the project directory and add data and figure folders:
-```
-cd /path/to/InformativePathPlanning
-mkdir data
-mkdir data/graph_cache
-mkdir data/maps
-mkdir figures
-```
-
-Activate the project:
-```
-julia> ]
-(v1.x) pkg> activate /path/to/InformativePathPlanning
+] add https://github.com/josh0tt/InformativePathPlanning.git
+using InformativePathPlanning
 ```
 
 To run the simple example:
 ```
-julia> include("simple_example.jl")
+julia> run_simple_example()
+```
+
+To run the multiagent example:
+```
+julia> run_multiagent_example()
 ```
 
 To reproduce the figures from the paper:
 ```
-julia> include("run_paper_experiments.jl")
-julia> figure_1()
+julia> run_paper_experiments()
 ```
 
 # Solver types
