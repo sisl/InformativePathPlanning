@@ -2,8 +2,11 @@ statprof/*
 notebooks/*
 data/*.jld2
 data/*.jld
-data/graph_cache/*
-data/maps/*
+data/graph_cache/*.jld2
+data/graph_cache/*.jld
+data/maps/*.jld2
+data/maps/*.jld
+data/maps/*.png
 
 figures/paper/figure_1/runs/*
 figures/paper/figure_2/runs/*
