@@ -162,6 +162,7 @@ export IPPGraph,
        build_graph, 
        run_multiagent_example, 
        run_multimodal_example,
-       build_maps
+       build_maps,
+       kernel
 
 end 
