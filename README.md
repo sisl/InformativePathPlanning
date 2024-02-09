@@ -6,7 +6,7 @@ We consider the problem of finding an informative path through a graph, given in
 
 Use the julia package manager to add the InformativePathPlanning module:: 
 ```julia 
-] add https://github.com/josh0tt/InformativePathPlanning.git
+] add https://github.com/sisl/InformativePathPlanning
 using InformativePathPlanning
 ```
 
