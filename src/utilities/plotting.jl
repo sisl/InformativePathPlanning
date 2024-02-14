@@ -151,9 +151,8 @@ function Plots.plot(mipp::MultiagentIPP, paths_hist, planned_paths_hist, gp_hist
             plot!(Theta[planned_path, 2], Theta[planned_path, 1], color=agent_colors[j], linewidth=3, linestyle=:dash, label="")
         end
         # plot the legend so it is to the side of the plot but not on top of the plot
-        plot!(legend=:outerleft, size=(1000, 500))
     end
-    Plots.gif(anim,  "figures/multiagent.gif", fps = 5)
+    Plots.gif(anim,  "figures/multiagent_black.gif", fps = 5)
 end
 
 function plot_trajectory(mmipp::MultimodalIPP, path::Vector{Int}, objVal::Float64, drills::Vector{Int}, runtime::Float64, figure_path::String="figures/1.pdf")
