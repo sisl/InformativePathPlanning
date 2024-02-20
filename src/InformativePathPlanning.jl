@@ -16,9 +16,25 @@ using Distances
 using Distributions
 using AbstractGPs
 using TickTock
-using Pajarito, Hypatia, HiGHS, MosekTools, Gurobi, SCS
+using Pajarito, Hypatia, HiGHS, SCS 
 import Hypatia.Cones
 using Parameters
+using Requires
+
+function __init__()
+    @require Gurobi="2e9cd046-0924-5485-92f1-d5272153d98b" begin
+        @eval using .Gurobi
+        global const gurobi_available = true
+        println("Gurobi is available.")
+    end
+
+    @require MosekTools="1ec41992-ff65-5c91-ac43-2df89e9693a4" begin
+        @eval using .MosekTools
+        global const mosek_available = true
+        println("Mosek is available.")
+    end
+
+end
 
 abstract type SolutionMethod end
 struct ASPO <: SolutionMethod end
@@ -145,24 +161,34 @@ include("multiagent_example.jl")
 include("multimodal_example.jl")
 
 export IPPGraph, 
-       MeasurementModel, 
-       IPP, 
-       MultiagentIPP, 
-       MultimodalIPP, 
-       ASPO, 
-       Greedy, 
-       mcts, 
-       Exact, 
-       trΣ⁻¹, 
-       random, 
-       DuttaMIP, 
-       solve, 
-       relax, 
-       run_simple_example, 
-       build_graph, 
-       run_multiagent_example, 
-       run_multimodal_example,
-       build_maps,
-       kernel
+    MeasurementModel, 
+    IPP, 
+    MultiagentIPP, 
+    MultimodalIPP, 
+    ASPO, 
+    Greedy, 
+    mcts, 
+    Exact, 
+    trΣ⁻¹, 
+    random, 
+    DuttaMIP, 
+    solve, 
+    relax, 
+    run_simple_example, 
+    build_graph, 
+    run_multiagent_example, 
+    run_multimodal_example,
+    build_maps,
+    kernel,
+    figure_1,
+    figure_2,
+    figure_3,
+    figure_4,
+    figure_5,
+    figure_6,
+    figure_7,
+    figure_9,
+    gurobi_available,
+    mosek_available
 
 end 

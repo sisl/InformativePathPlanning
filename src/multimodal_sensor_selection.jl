@@ -34,7 +34,12 @@ function run_d_optimal_sensor_selection(mmipp::MultimodalIPP, path::Vector{Int})
             )
         )
     else
-        model = Model(Mosek.Optimizer)
+        if isdefined(Main, :mosek_available)
+            println("Mosek")
+            model = Model(Mosek.Optimizer)
+        else
+            @error("Commercial solver specified but not available.")
+        end
     end
     
     @variable(model, 0 <= s[1:n] <= 1)
@@ -125,7 +130,12 @@ function run_a_optimal_sensor_selection(mmipp::MultimodalIPP, path::Vector{Int})
             )
         )
     else
-        model = Model(Mosek.Optimizer)
+        if isdefined(Main, :mosek_available)
+            println("Mosek")
+            model = Model(Mosek.Optimizer)
+        else
+            @error("Commercial solver specified but not available.")
+        end
     end
 
     @variable(model, 0 <= s[1:n] <= 1)

@@ -35,8 +35,12 @@ function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
             println("Hypatia")
             model = Model(Hypatia.Optimizer)
         else
-            println("Mosek")
-            model = Model(Mosek.Optimizer)
+            if isdefined(Main, :mosek_available)
+                println("Mosek")
+                model = Model(Mosek.Optimizer)
+            else
+                @error("Commercial solver specified but not available.")
+            end
         end
     else
         if ipp_problem.solver_type == "open"
@@ -54,20 +58,25 @@ function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
                 )
             )
         else
-            println("Gurobi & Mosek")
-            model = Model(
-                optimizer_with_attributes(
-                    Pajarito.Optimizer,
-                    "oa_solver" => optimizer_with_attributes(
-                        Gurobi.Optimizer,
-                        MOI.Silent() => true,
-                        "FeasibilityTol" => 1e-8,
-                        "MIPGap" => 1e-6,
-                    ),
-                    "conic_solver" =>
-                        optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true),
-                )
-            )
+            if isdefined(Main, :gurobi_available) && isdefined(Main, :mosek_available)
+                println("Gurobi & Mosek")
+                
+                model = Model(
+                    optimizer_with_attributes(
+                        Pajarito.Optimizer,
+                        "oa_solver" => optimizer_with_attributes(
+                            Gurobi.Optimizer,
+                            MOI.Silent() => true,
+                            "FeasibilityTol" => 1e-8,
+                            "MIPGap" => 1e-6,
+                        ),
+                        "conic_solver" =>
+                            optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true),
+                    )
+                )            
+            else
+                @error("Commercial solver specified but not available.")
+            end
         end
     end
 
@@ -181,8 +190,12 @@ function run_DIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
             println("Hypatia")
             model = Model(Hypatia.Optimizer)
         else
-            println("Mosek")
-            model = Model(Mosek.Optimizer)
+            if isdefined(Main, :mosek_available)
+                println("Mosek")
+                model = Model(Mosek.Optimizer)
+            else
+                @error("Commercial solver specified but not available.")
+            end
         end
     else
         if ipp_problem.solver_type == "open"
@@ -200,20 +213,27 @@ function run_DIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
                 )
             )
         else
-            println("Gurobi & Mosek")
-            model = Model(
-                optimizer_with_attributes(
-                    Pajarito.Optimizer,
-                    "oa_solver" => optimizer_with_attributes(
-                        Gurobi.Optimizer,
-                        MOI.Silent() => true,
-                        "FeasibilityTol" => 1e-8,
-                        "MIPGap" => 1e-6,
-                    ),
-                    "conic_solver" =>
-                        optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true),
-                )
-            )
+            if isdefined(Main, :gurobi_available) && isdefined(Main, :mosek_available)
+                println("Gurobi & Mosek")
+
+                model = Model(
+                    optimizer_with_attributes(
+                        Pajarito.Optimizer,
+                        "oa_solver" => optimizer_with_attributes(
+                            Gurobi.Optimizer,
+                            MOI.Silent() => true,
+                            "FeasibilityTol" => 1e-8,
+                            "MIPGap" => 1e-6,
+                        ),
+                        "conic_solver" =>
+                            optimizer_with_attributes(Mosek.Optimizer, MOI.Silent() => true),
+                    )
+                )            
+            else
+                @error("Commercial solver specified but not available.")
+            end
+
+            
         end
     end
 
@@ -333,8 +353,12 @@ function run_BIPP_exact(ipp_problem::IPP, idx)
         println("HiGHS")
         model = Model(HiGHS.Optimizer)
     else
-        println("Gurobi")
-        model = Model(Gurobi.Optimizer)
+        if isdefined(Main, :gurobi_available)
+            println("Gurobi")
+            model = Model(Gurobi.Optimizer) # Mosek does not support SOS1 constraints
+        else
+            @error("Commercial solver specified but not available.")
+        end
     end
 
     G = ipp_problem.Graph.G

@@ -1,4 +1,4 @@
-function run_simple_example()
+function run_simple_example(solver_type::String="open")
     # data_path is one directory up from the current directory lets use .. to go up one directory
     data_path = "../data/"
     rng = Random.MersenneTwister(12345)
@@ -33,7 +33,7 @@ function run_simple_example()
     measurement_model = MeasurementModel(σ, Σₓ, Σₓ⁻¹, L, A)
 
     # Create an IPP problem
-    ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, solution_time, replan_rate, "open")
+    ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, solution_time, replan_rate, solver_type)
 
     # Solve the IPP problem
     val, t = @timed solve(ipp_problem, ASPO())

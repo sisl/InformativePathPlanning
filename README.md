@@ -32,11 +32,14 @@ To run the multiagent example:
 julia> run_multiagent_example()
 ```
 
-To reproduce the figures from the paper:
+To reproduce the figures from the paper you need both Mosek and Gurobi (see additional details on solvers below):
 ```julia
-julia> run_paper_experiments()
+julia> using Gurobi
+julia> using MosekTools
+julia> using InformativePathPlanning
+julia> figure_1()
 ```
 Note that the `data` and `figures` directories are included by default so that you do not have to create them before running the paper experiments. 
 
 # Solver types
-If you don't have access to Mosek and Gurobi licenses, you can specify the solver type as `"open"` inside of the IPP struct. By default, it is set to `"commercial"`.   
+If you don't have access to Mosek and Gurobi licenses, you can specify the solver type as `"open"` inside of the IPP struct. By default, it is set to `"commercial"`. If you want to use Mosek and Gurobi you must have the `using Gurobi` or `using MosekTools` come before `using InformativePathPlanning` as shown above. This is because the InformativePathPlanning planning package will check for Gurobi and Mosek on initialization.

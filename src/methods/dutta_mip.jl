@@ -1,15 +1,3 @@
-function scale(n::Int, lower::Int, upper::Int)
-    # Define the input range
-    x1 = 4
-    x2 = 3844
-
-    # Calculate the corresponding output
-    r = (((n - x1) * (upper - lower)) / (x2 - x1)) + lower
-
-    # Round to nearest integer and return
-    return round(Int, r)
-end
-
 function compute_mip_path(n::Int, G::Vector{Vector{Int64}}, z, start::Int, end_idx::Int, dist::Matrix{Float64})
     v1 = start
     soln = [v1]
@@ -44,7 +32,11 @@ function run_dutta_mip(ipp_problem::IPP, idx)
     if ipp_problem.solver_type == "open"
         @error("Gurobi solver is required for Dutta et al. method")
     else
-        model = Model(Gurobi.Optimizer) # Mosek does not support SOS1 constraints
+        if isdefined(Main, :gurobi_available)
+            model = Model(Gurobi.Optimizer) # Mosek does not support SOS1 constraints
+        else
+            @error("Commercial solver specified but not available.")
+        end
     end
 
     G = ipp_problem.Graph.G
