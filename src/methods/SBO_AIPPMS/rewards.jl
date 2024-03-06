@@ -43,7 +43,7 @@ function belief_reward(pomdp::RoverPOMDP, b::RoverBelief, a, bp::RoverBelief)
     
                 σ = sqrt.(var(bp.location_belief(query_candidate_point)))[1]
                 μ = mean(bp.location_belief(query_candidate_point))[1]
-                EI = expected_improvement(y_min, μ, σ)
+                EI = expected_improvement_cgp(y_min, μ, σ)
                 r += EI
             elseif pomdp.objective == "lower_confidence_bound"
                 # want to go where μ - α*σ is lowest, so we want to go to locations that have greater (less negative) -(μ - α*σ)

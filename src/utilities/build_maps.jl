@@ -8,8 +8,6 @@ using JLD2
 using LinearAlgebra
 using AbstractGPs
 
-include("build_graph.jl")
-
 function build_map(rng::RNG, G::Vector{Vector{Int64}}, number_of_sample_types::Int, map_size::Tuple{Int, Int}) where {RNG<:AbstractRNG}
 	sample_types = collect(0:(1/number_of_sample_types):(1-1/number_of_sample_types))
 	init_map = rand(rng, sample_types, map_size[1], map_size[2])

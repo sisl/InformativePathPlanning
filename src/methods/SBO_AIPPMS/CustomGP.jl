@@ -37,7 +37,7 @@ function query_no_data(GP::GaussianProcess)
     νₚ = diag(S) .+ 1e-4 # eps prevents numerical issues
 
     y_min = Inf
-    EI = [expected_improvement(y_min, μₚ[i], sqrt.(νₚ[i])) for i in 1:length(μₚ)]
+    EI = [expected_improvement_cgp(y_min, μₚ[i], sqrt.(νₚ[i])) for i in 1:length(μₚ)]
     lcb = [LB(μₚ[i], sqrt.(νₚ[i])) for i in 1:length(μₚ)]
     return (μₚ, νₚ, S, EI, lcb)
 end
@@ -58,7 +58,7 @@ function query(GP::GaussianProcess)
     νₚ = diag(S) .+ 1e-4 # eps prevents numerical issues
 
     y_min = minimum(GP.y)
-    EI = [expected_improvement(y_min, μₚ[i], sqrt.(νₚ[i])) for i in 1:length(μₚ)]
+    EI = [expected_improvement_cgp(y_min, μₚ[i], sqrt.(νₚ[i])) for i in 1:length(μₚ)]
     lcb = [LB(μₚ[i], sqrt.(νₚ[i])) for i in 1:length(μₚ)]
     return (μₚ, νₚ, S, EI, lcb)
 end
@@ -89,10 +89,8 @@ function posterior(GP::GaussianProcess, X_samp, y_samp, ν_samp)
     end
 end
 
-prob_of_improvement(y_min, μ, σ) = cdf(Normal(μ, σ), y_min) 
-
-function expected_improvement(y_min, μ, σ)
-    p_imp = prob_of_improvement(y_min, μ, σ)
+function expected_improvement_cgp(y_min, μ, σ)
+    p_imp = cdf(Normal(μ, σ), y_min) 
     p_ymin = pdf(Normal(μ, σ), y_min)
     return (y_min - μ)*p_imp + σ^2*p_ymin
 end
