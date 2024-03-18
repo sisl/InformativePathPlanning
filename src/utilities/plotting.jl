@@ -59,6 +59,40 @@ function Plots.plot(mmipp::MultimodalIPP, path::Vector{Int}, drills::Vector{Int}
     savefig(figure_path)
 end
 
+function Plots.plot(mmipp::MultimodalPOIIPP, path::Vector{Int}, drills::Vector{Int}, objVal::Float64, runtime::Float64, figure_path::String="figures/1.pdf")
+    """
+    Plots Multimodal POI IPP problem with drill locations 
+    """
+    ipp_problem = mmipp.poiipp.ipp_problem
+    objective = ipp_problem.objective
+    B = ipp_problem.B
+    n = ipp_problem.n
+    m = ipp_problem.m
+    true_map = ipp_problem.Graph.true_map
+    edge_length = ipp_problem.Graph.edge_length
+    Theta = ipp_problem.Graph.Theta
+    Omega = ipp_problem.Graph.Omega
+    noi = mmipp.poiipp.noi
+
+    if objective == "expected_improvement" || objective == "lower_confidence_bound"
+        plot_scale = collect(range(0,edge_length, size(true_map, 1)))
+
+        @show size(true_map)
+        @show isqrt(size(true_map, 1))
+        @show length(plot_scale)
+        heatmap(plot_scale, plot_scale, true_map')
+    else
+        scatter(Theta[:, 1], Theta[:, 2], label="obs loc")
+        scatter!(Omega[:, 1], Omega[:, 2], label="pred loc")
+    end
+    pLength = path_distance(ipp_problem, path)
+    plot!([Theta[path[i], 1] for i in 1:length(path)], [Theta[path[i], 2] for i in 1:length(path)], label="path", lw=3, c=:black, title="N = $(n), M = $(m), Obj=$(round(objVal, digits=2)), B=$(B), d=$(round(pLength, digits=2)), t=$(round(runtime, digits=2))")
+    # scatter the drill locations
+    scatter!([Theta[drills[i], 1] for i in 1:length(drills)], [Theta[drills[i], 2] for i in 1:length(drills)], label="drill loc", c=:yellow)
+    scatter!([Theta[noi[i], 1] for i in 1:length(noi)], [Theta[noi[i], 2] for i in 1:length(noi)], label="poi loc", c=:red)
+    savefig(figure_path)
+end
+
 function Plots.plot(mmipp::MultimodalIPP, path::Vector{Int}, mcts_drills::Vector{Int}, cvx_drills::Vector{Int}, objVal::Float64, runtime::Float64, figure_path::String="figures/1.pdf")
     """
     Plots Multimodal IPP problem with both MCTS and CVX drill locations

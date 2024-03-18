@@ -194,3 +194,15 @@ function run_a_optimal_sensor_selection(mmipp::MultimodalIPP, path::Vector{Int})
 
     return drills
 end
+
+
+##########################################################################
+# MultimodalPOIIPP
+##########################################################################
+function run_d_optimal_sensor_selection(mmipp::MultimodalPOIIPP, path::Vector{Int})
+    return run_d_optimal_sensor_selection(MultimodalIPP(mmipp.poiipp.ipp_problem, mmipp.σ_min, mmipp.σ_max, mmipp.k), path)
+end
+
+function run_a_optimal_sensor_selection(mmipp::MultimodalPOIIPP, path::Vector{Int})
+    return run_a_optimal_sensor_selection(MultimodalIPP(mmipp.poiipp.ipp_problem, mmipp.σ_min, mmipp.σ_max, mmipp.k), path)
+end

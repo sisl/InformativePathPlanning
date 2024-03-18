@@ -97,6 +97,18 @@ end
     k::Int                                                                  # number of sensor types 
 end
 
+struct PointsOfInterestIPP
+    ipp_problem::IPP                                                        # IPP problem
+    noi::Vector{Int64}                                                      # Nodes of interest in the IPP problem graph
+end
+
+@with_kw struct MultimodalPOIIPP
+    poiipp::PointsOfInterestIPP                                             # PointsOfInterestIPP problem
+    σ_min::Float64                                                          # highest quality sensor
+    σ_max::Float64                                                          # lowest quality sensor
+    k::Int                                                                  # number of sensor types 
+end
+
 include("utilities/build_graph.jl")
 include("utilities/utilities.jl")
 include("methods/aspo.jl")
@@ -107,6 +119,7 @@ include("methods/mcts.jl")
 include("utilities/plotting.jl")
 include("multimodal_sensor_selection.jl")
 include("utilities/build_maps.jl")
+include("methods/points_of_interest.jl")
 
 function solve(ipp_problem::MultiagentIPP)
     """ 
@@ -139,6 +152,27 @@ function solve(mmipp::MultimodalIPP, method::SolutionMethod)
     return path, drills, objVal
 end
 
+function solve(mmipp::MultimodalPOIIPP, method::SolutionMethod)
+    """ 
+    Takes in MultimodalPOIIPP problem definition and returns the path and objective value
+    using the solution method specified by method.
+    """
+
+    if typeof(method) != Exact && typeof(method) != trΣ⁻¹
+        @error("You tried to run multimodal sensing for a method that is not implemented")
+    else
+        path, objVal = solve(mmipp.poiipp, method)
+
+        if mmipp.poiipp.ipp_problem.objective ∉ ["A-IPP", "D-IPP"]
+            @error("You tried to run multimodal sensing for an objective that is not implemented")
+        else
+            drills, drill_time = @timed (mmipp.poiipp.ipp_problem.objective == "A-IPP" ? run_a_optimal_sensor_selection(mmipp, unique(path)) : run_d_optimal_sensor_selection(mmipp, unique(path)))
+        end
+
+        return path, drills, objVal
+    end
+end
+
 function solve(ipp_problem::IPP)
     """ 
     Takes in IPP problem definition and returns the path and objective value.
@@ -161,12 +195,14 @@ end
 include("simple_example.jl")
 include("multiagent_example.jl")
 include("multimodal_example.jl")
+include("poi_example.jl")
 
 export IPPGraph, 
     MeasurementModel, 
     IPP, 
     MultiagentIPP, 
-    MultimodalIPP, 
+    MultimodalIPP,
+    PointsOfInterestIPP, 
     ASPO, 
     Greedy, 
     mcts, 
@@ -180,6 +216,8 @@ export IPPGraph,
     build_graph, 
     run_multiagent_example, 
     run_multimodal_example,
+    run_poi_example,
+    run_poi_multimodal_example,
     build_maps,
     kernel,
     figure_1,
