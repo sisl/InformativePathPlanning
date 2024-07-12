@@ -113,6 +113,10 @@ function build_G_Theta_Omega(rng, n::Int, m::Int, edge_length::Int)
     Omega = hcat(omega_x, omega_y)
     # Omega = Theta[rand(rng, 1:n, m), :]
 
+    # randomly sample directly from Theta without replacement
+    # idxs = randperm(rng, n)[1:m]
+    # Omega = Theta[idxs, :]
+
     # create adjacency list
     G = adjList(n)
 
