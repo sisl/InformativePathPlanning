@@ -1,4 +1,4 @@
-[![arXiv](https://img.shields.io/badge/InformativePathPlanning:%20arXiv-2306.00249-b31b1b.svg)](https://arxiv.org/abs/2402.08841)
+[![arXiv](https://img.shields.io/badge/Informative Path Planning:%20arXiv-2306.00249-b31b1b.svg)](https://arxiv.org/abs/2402.08841)
 
 # Approximate Sequential Optimization for Informative Path Planning
 
