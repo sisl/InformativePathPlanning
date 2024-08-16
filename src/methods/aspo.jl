@@ -176,7 +176,7 @@ function solve(ipp_problem::IPP, method::ASPO)
     """
 
     path = Vector{Int64}([ipp_problem.Graph.start])
-    gp, y_hist = initialize_gp(ipp_problem)
+    gp, y_hist = initialize_gp(ipp_problem, AbstractGPs.GP(with_lengthscale(SqExponentialKernel(), ipp_problem.MeasurementModel.L)))
     time_left = ipp_problem.solution_time
     prev_planned_path = shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, path[end], ipp_problem.Graph.goal)
 
@@ -223,7 +223,7 @@ function solve(mipp::MultiagentIPP, method::ASPO, plot_gif=false, centers=[], ra
 
     ipp_problem = mipp.ipp_problem
     paths = Vector{Vector{Int64}}([[ipp_problem.Graph.start] for _ in 1:mipp.M])
-    gp, y_hist = initialize_gp(ipp_problem)
+    gp, y_hist = initialize_gp(ipp_problem, AbstractGPs.GP(with_lengthscale(SqExponentialKernel(), ipp_problem.MeasurementModel.L)))
     time_left = ipp_problem.solution_time
     prev_planned_paths = [shortest_path(ipp_problem.Graph.all_pairs_shortest_paths, ipp_problem.Graph.start, ipp_problem.Graph.goal) for _ in 1:mipp.M]
     termination_flags = fill(false, mipp.M)

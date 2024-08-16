@@ -46,6 +46,7 @@ struct Exact <: SolutionMethod end
 struct trΣ⁻¹ <: SolutionMethod end
 struct random <: SolutionMethod end
 struct DuttaMIP <: SolutionMethod end
+struct ASPOCAtNIPPComparison <: SolutionMethod end
 
 @with_kw struct IPPGraph
     G::Vector{Vector{Int64}}                                                # G[i] returns the neighbors of node i
@@ -112,6 +113,7 @@ end
 include("utilities/build_graph.jl")
 include("utilities/utilities.jl")
 include("methods/aspo.jl")
+include("methods/aspo_catnipp_comp.jl")
 include("methods/greedy.jl")
 include("methods/exact.jl")
 include("methods/dutta_mip.jl")
@@ -196,6 +198,7 @@ include("simple_example.jl")
 include("multiagent_example.jl")
 include("multimodal_example.jl")
 include("poi_example.jl")
+include("run_catnipp_comparison.jl")
 
 export IPPGraph, 
     MeasurementModel, 
@@ -205,6 +208,7 @@ export IPPGraph,
     MultimodalPOIIPP,
     PointsOfInterestIPP, 
     ASPO, 
+    ASPOCAtNIPPComparison,
     Greedy, 
     mcts, 
     Exact, 
@@ -230,6 +234,6 @@ export IPPGraph,
     figure_7,
     figure_9,
     gurobi_available,
-    mosek_available
-
+    mosek_available,
+    run_catnipp_comparison
 end 

@@ -73,7 +73,7 @@ function solve(ipp_problem::IPP, method::Greedy)
     """
 
     path = Vector{Int64}([ipp_problem.Graph.start])
-    gp, y_hist = initialize_gp(ipp_problem)
+    gp, y_hist = initialize_gp(ipp_problem, AbstractGPs.GP(with_lengthscale(SqExponentialKernel(), ipp_problem.MeasurementModel.L)))
     time_left = ipp_problem.solution_time
 
     Ω = [ipp_problem.Graph.Omega[i, :] for i in 1:size(ipp_problem.Graph.Omega, 1)] 

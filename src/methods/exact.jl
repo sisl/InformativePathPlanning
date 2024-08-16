@@ -113,7 +113,8 @@ function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
 
     # exactly one edge out of start vertex and one edge into end vertex
     @constraint(model, sum(z[(start, j)] for j in G_dict[start]) == 1)
-    @constraint(model, sum(z[(i, goal)] for i in G_dict[goal]) == 1)
+    # @constraint(model, sum(z[(i, goal)] for i in G_dict[goal]) == 1)
+    @constraint(model, sum(z[(i, goal)] for i in 1:n if goal in G_dict[i]) == 1)
 
     # no incoming edge into start, no outgoing edge from end
     for i in 1:n
@@ -270,7 +271,8 @@ function run_DIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
 
     # exactly one edge out of start vertex and one edge into end vertex
     @constraint(model, sum(z[(start, j)] for j in G_dict[start]) == 1)
-    @constraint(model, sum(z[(i, goal)] for i in G_dict[goal]) == 1)
+    # @constraint(model, sum(z[(i, goal)] for i in G_dict[goal]) == 1)
+    @constraint(model, sum(z[(i, goal)] for i in 1:n if goal in G_dict[i]) == 1)
 
     # no incoming edge into start, no outgoing edge from end
     for i in 1:n
@@ -385,7 +387,8 @@ function run_BIPP_exact(ipp_problem::IPP, idx)
 
     # exactly one edge out of start vertex and one edge into end vertex
     @constraint(model, sum(z[(start, j)] for j in G_dict[start]) == 1)
-    @constraint(model, sum(z[(i, goal)] for i in G_dict[goal]) == 1)
+    # @constraint(model, sum(z[(i, goal)] for i in G_dict[goal]) == 1)
+    @constraint(model, sum(z[(i, goal)] for i in 1:n if goal in G_dict[i]) == 1)
 
     # no incoming edge into start, no outgoing edge from end
     for i in 1:n

@@ -25,9 +25,8 @@ function kernel(x::Matrix{Float64}, y::Matrix{Float64}, L, σ_0=1)
     return K
 end
 
-function initialize_gp(ipp_problem::IPP)
+function initialize_gp(ipp_problem::IPP, gp)
     path = [ipp_problem.Graph.start]
-    gp = AbstractGPs.GP(with_lengthscale(SqExponentialKernel(), ipp_problem.MeasurementModel.L))
 
     x = ipp_problem.Graph.Theta[path, :]
     X = [x[i, :] for i in 1:size(x, 1)]
