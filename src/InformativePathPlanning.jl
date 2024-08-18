@@ -235,5 +235,7 @@ export IPPGraph,
     figure_9,
     gurobi_available,
     mosek_available,
-    run_catnipp_comparison
+    run_catnipp_comparison,
+    get_measurement,
+    get_measurement_history
 end 

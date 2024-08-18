@@ -16,6 +16,12 @@ Trajectories generated from each of the methods and baselines with `n=625` graph
   <img alt="Variance" src="https://github.com/sisl/InformativePathPlanning/blob/main/img/trajectories.png" width="100%">
 </p>
 
+Comparison with [CAtNIPP](https://github.com/marmotlab/CAtNIPP) trajectory sampling variant
+
+<p align="center">
+  <img alt="Variance" src="https://github.com/sisl/InformativePathPlanning/blob/main/img/aspo_vs_catnipp.gif" width="100%">
+</p>
+
 # Instructions
 
 Use the julia package manager to add the InformativePathPlanning module:: 

@@ -9,7 +9,7 @@ using Random
 using LinearAlgebra
 using ProgressMeter
 
-function create_graph_from_dict(graph_dict, node_coords, route)
+function create_graph_from_dict(graph_dict, node_coords, route, greedy_route)
     graph = Dict("nodes" => Set(graph_dict["nodes"]), "edges" => Dict())
 
     for (from_node, to_node_edges) in graph_dict["edges"]
@@ -65,6 +65,13 @@ function create_graph_from_dict(graph_dict, node_coords, route)
             route[i] = temp_idx
         end
     end
+    for i in 1:length(greedy_route)
+        if greedy_route[i] == temp_idx
+            greedy_route[i] = start_idx
+        elseif greedy_route[i] == start_idx
+            greedy_route[i] = temp_idx
+        end
+    end
 
     # Step 2: Move the goal node (currently at index 1) to the last index
     G[goal_idx], G[last_idx] = G[last_idx], G[goal_idx]
@@ -76,6 +83,13 @@ function create_graph_from_dict(graph_dict, node_coords, route)
             route[i] = last_idx
         elseif route[i] == last_idx
             route[i] = goal_idx
+        end
+    end
+    for i in 1:length(greedy_route)
+        if greedy_route[i] == goal_idx
+            greedy_route[i] = last_idx
+        elseif greedy_route[i] == last_idx
+            greedy_route[i] = goal_idx
         end
     end
 
@@ -95,32 +109,33 @@ function create_graph_from_dict(graph_dict, node_coords, route)
         G[i] = filter(x -> x != i, G[i])
     end
 
-    return graph, G, node_coords, route
+    return graph, G, node_coords, route, greedy_route
 end
 
 function run_aspo_catnipp_experiment(node_coords::Matrix{Float64}, ground_truth::Vector{Float64}, G::Vector{Vector{Int}}, budget::Float64)
     rng = Random.MersenneTwister(12345)
 
     n = size(node_coords, 1)
-    m = 40
-    objective = "catnipp" #"expected_improvement"
+    objective = "catnipp"
     edge_length = 1
     B = budget
     solution_time = 120.0
-    replan_rate = 1#round(Int, 0.16 * B/edge_length * sqrt(n)) #1#round(Int, 0.02 * B/edge_length * sqrt(n))
+    replan_rate = 3
     true_map = reshape(ground_truth, 30, 30)
 
     Theta = node_coords
 
     # Generate query locations
-    omega_x = rand(rng, m)*edge_length
-    omega_y = rand(rng, m)*edge_length
-    Omega = hcat(omega_x, omega_y)
+    # omega_x = rand(rng, m)*edge_length
+    # omega_y = rand(rng, m)*edge_length
+    # Omega = hcat(omega_x, omega_y)
 
-    # x = LinRange(0, 1, 30)
-    # y = LinRange(0, 1, 30)
-    # Omega = hcat(x, y)
-    # # grid = [[[i, j] for i in x, j in y]...]
+    # GRID QUERY LOCATIONS
+    x = LinRange(0, 1, 12)
+    y = LinRange(0, 1, 12)
+    grid = [[[i, j] for i in x, j in y]...]
+    Omega = Matrix(hcat(grid...)')
+    m = size(Omega, 1)
 
     # Generate all_pairs_shortest_paths
     graph = build_graph(G, n, Theta)
@@ -226,30 +241,77 @@ function local_opt(ipp_problem::IPP, G_dict, path::Vector{Int}, iter::Int, start
 end
 
 
-# function catnipp_objective(ipp_problem::IPP, path::Vector{Int64})
-#     y_hist = ipp_problem.Graph.true_map[path]
+function get_measurement(node_coord::Vector{Float64}, true_map::Matrix{Float64})
+    x = LinRange(0, 1, 30)
+    y = LinRange(0, 1, 30)
+    grid = [[[i, j] for i in x, j in y]...]
+    true_map_node_coords = Matrix(hcat(grid...)')
 
-#     gp = AbstractGPs.GP(with_lengthscale(MaternKernel(ν=1.5), ipp_problem.MeasurementModel.L))
-#     # create grid of 30x30 points in [0,1]x[0,1]
-#     x = LinRange(0, 1, 30)
-#     y = LinRange(0, 1, 30)
-#     grid = [[[i, j] for i in x, j in y]...]
-#     Ω = grid
+    closest_node = argmin([norm(node_coord - true_map_node_coords[i, :]) for i in 1:size(true_map_node_coords, 1)])
+    
+    return true_map[closest_node]
+end
 
-#     ν = ipp_problem.MeasurementModel.σ^2 .* ones(1:length(path))
+function get_measurement(node_coord::Matrix{Float64}, true_map::Matrix{Float64})
+    x = LinRange(0, 1, 30)
+    y = LinRange(0, 1, 30)
+    grid = [[[i, j] for i in x, j in y]...]
+    true_map_node_coords = Matrix(hcat(grid...)')
 
-#     x = ipp_problem.Graph.Theta[path, :]
-#     X = [x[i, :] for i in 1:size(x, 1)]    
-#     y = y_hist
-#     post_gp = AbstractGPs.posterior(gp(X, ν), y)
+    closest_node = argmin([norm(node_coord' - true_map_node_coords[i, :]) for i in 1:size(true_map_node_coords, 1)])
+    
+    return true_map[closest_node]
+end
 
-#     variances = var(post_gp(Ω))
-#     return sum(variances)
-# end
+function get_measurement_history(path::Vector{Int64}, true_map::Matrix{Float64}, node_coords::Matrix{Float64})
+    x = LinRange(0, 1, 30)
+    y = LinRange(0, 1, 30)
+    grid = [[[i, j] for i in x, j in y]...]
+    true_map_node_coords = Matrix(hcat(grid...)')
+
+    y_hist = Vector{Float64}()
+
+    for i in 1:length(path)
+        node_coord = node_coords[path[i], :]
+        closest_node = argmin([norm(node_coord - true_map_node_coords[i, :]) for i in 1:size(true_map_node_coords, 1)])
+        push!(y_hist, true_map[closest_node])
+    end
+
+    return y_hist
+
+end
+
+function query_high_interest(true_map::Matrix{Float64}, Theta::Matrix{Float64}, path::Vector{Int64}, L=0.45, σ=1e-7)
+    # computes the variange in high interest areas 
+    y_hist = get_measurement_history(path, true_map, Theta)
+
+    gp = AbstractGPs.GP(with_lengthscale(MaternKernel(ν=1.5), L))
+    # create grid of 30x30 points in [0,1]x[0,1]
+    x = LinRange(0, 1, 30)
+    y = LinRange(0, 1, 30)
+    grid = [[[i, j] for i in x, j in y]...]
+    Ω = grid
+
+    ν = σ^2 .* ones(1:length(path))
+
+    x = Theta[path, :]
+    X = [x[i, :] for i in 1:size(x, 1)]    
+    y = y_hist
+    post_gp = AbstractGPs.posterior(gp(X, ν), y)
+
+    β = 1 
+    μ = mean(post_gp(Ω))
+    std = sqrt.(var(post_gp(Ω)))
+    # This uses the resulting GP belief to determine the high interest nodes
+    high_interest_idxs = [(μ + β * std)[i] > 0.4 ? 1 : 0 for i in 1:length(Ω)]
+    high_interest_grid = zeros(900)
+    high_interest_grid[high_interest_idxs .== 1] .= 1
+    return reshape(high_interest_grid, 30, 30)
+end
 
 function catnipp_objective(ipp_problem::IPP, path::Vector{Int64})
     # computes the variange in high interest areas 
-    y_hist = ipp_problem.Graph.true_map[path]
+    y_hist = get_measurement_history(path, ipp_problem.Graph.true_map, ipp_problem.Graph.Theta) #ipp_problem.Graph.true_map[path]
 
     gp = AbstractGPs.GP(with_lengthscale(MaternKernel(ν=1.5), ipp_problem.MeasurementModel.L))
     # create grid of 30x30 points in [0,1]x[0,1]
@@ -268,7 +330,13 @@ function catnipp_objective(ipp_problem::IPP, path::Vector{Int64})
     β = 1 
     μ = mean(post_gp(Ω))
     std = sqrt.(var(post_gp(Ω)))
-    high_interest_nodes = Ω[findall(μ + β * std .> 0.4)]
+    # This uses the resulting GP belief to determine the high interest nodes
+    # high_interest_nodes = Ω[findall(μ + β * std .> 0.4)]
+    
+    # What we actually care about is the variance in the ground truth high interest nodes
+    high_interest_idxs = [ipp_problem.Graph.true_map[i] > 0.4 ? 1 : 0 for i in 1:900]
+    high_interest_nodes = Ω[high_interest_idxs .== 1]
+
     if isempty(high_interest_nodes)
         println("No high interest nodes found")
         return Inf
@@ -278,19 +346,19 @@ function catnipp_objective(ipp_problem::IPP, path::Vector{Int64})
     end
 end
 
-function posterior_estimate(ipp_problem::IPP, path::Vector{Int64}, query_size::Tuple{Int, Int})
-    y_hist = ipp_problem.Graph.true_map[path]
+function posterior_estimate(path::Vector{Int64}, query_size::Tuple{Int, Int}, Theta::Matrix{Float64}, true_map, L=0.45, σ=1e-7)
+    y_hist = get_measurement_history(path, true_map, Theta)
 
-    gp = AbstractGPs.GP(with_lengthscale(MaternKernel(ν=1.5), ipp_problem.MeasurementModel.L))
+    gp = AbstractGPs.GP(with_lengthscale(MaternKernel(ν=1.5), L))
     # create grid of 30x30 points in [0,1]x[0,1]
     x = LinRange(0, 1, query_size[1])
     y = LinRange(0, 1, query_size[2])
     grid = [[[i, j] for i in x, j in y]...]
     Ω = grid
 
-    ν = ipp_problem.MeasurementModel.σ^2 .* ones(1:length(path))
+    ν = σ^2 .* ones(1:length(path))
 
-    x = ipp_problem.Graph.Theta[path, :]
+    x = Theta[path, :]
     X = [x[i, :] for i in 1:size(x, 1)]    
     y = y_hist
     post_gp = AbstractGPs.posterior(gp(X, ν), y)
@@ -350,32 +418,35 @@ function run_catnipp_comparison()
         aspo_budget_hists = []
         aspo_distances = []
         aspo_objectives = []
-        local_opt_paths = []
-        local_opt_obj_hists = []
-        local_opt_budget_hists = []
-        local_opt_distances = []
-        local_opt_objectives = []
-        catnipp_obj_hists = []
-        catnipp_budget_hists = []
-        catnipp_distances = []
-        catnipp_objectives = []
+        aspo_planning_times = []
+        catnipp_ts_obj_hists = []
+        catnipp_ts_budget_hists = []
+        catnipp_ts_distances = []
+        catnipp_ts_objectives = []
+        catnipp_greedy_obj_hists = []
+        catnipp_greedy_budget_hists = []
+        catnipp_greedy_distances = []
+        catnipp_greedy_objectives = []
 
         Threads.@threads for i in 0:99
             graph_data = JSON.parsefile(data_path * "/catnipp_results/budget_$(budget)/graph/$(i)_graph.json")
             node_coords = npzread(data_path * "/catnipp_results/budget_$(budget)/graph/$(i)_node_coords.npy")
             ground_truth = npzread(data_path * "/catnipp_results/budget_$(budget)/graph/$(i)_ground_truth.npy")
             route = npzread(data_path * "/catnipp_results/budget_$(budget)/routes/$(i)_route.npy")
+            greedy_route = npzread(data_path * "/catnipp_results/budget_$(budget)/greedy/routes/$(i)_route.npy")
             route = route .+ 1 # Convert to 1-indexed
+            greedy_route = greedy_route .+ 1 # Convert to 1-indexed
 
             # Create the graph from the dictionary
-            graph, G, node_coords, route = create_graph_from_dict(graph_data, node_coords, route)
+            graph, G, node_coords, route, greedy_route = create_graph_from_dict(graph_data, node_coords, route, greedy_route)
 
-            path, ipp_problem = run_aspo_catnipp_experiment(node_coords, ground_truth, G, float(budget))
+            val, t = @timed run_aspo_catnipp_experiment(node_coords, ground_truth, G, float(budget))
+            path, ipp_problem = val
 
             path = check_path_distance(ipp_problem, path)
 
-            G_dict = Dict(j => Set(G[j]) for j in 1:ipp_problem.n)
-            local_opt_path = local_opt(ipp_problem, G_dict, path, 1, time())
+            # G_dict = Dict(j => Set(G[j]) for j in 1:ipp_problem.n)
+            # local_opt_path = local_opt(ipp_problem, G_dict, path, 1, time())
 
             lock(data_lock) do
                 aspo_paths = push!(aspo_paths, path)
@@ -383,19 +454,20 @@ function run_catnipp_comparison()
                 aspo_objectives = push!(aspo_objectives, catnipp_objective(ipp_problem, path))
                 aspo_obj_hists = push!(aspo_obj_hists, compute_obj_hist(ipp_problem, path))
                 aspo_budget_hists = push!(aspo_budget_hists, compute_budget_hist(ipp_problem, path))
-                local_opt_paths = push!(local_opt_paths, local_opt_path)
-                local_opt_distances = push!(local_opt_distances, InformativePathPlanning.path_distance(ipp_problem, local_opt_path))
-                local_opt_objectives = push!(local_opt_objectives, catnipp_objective(ipp_problem, local_opt_path))
-                local_opt_obj_hists = push!(local_opt_obj_hists, compute_obj_hist(ipp_problem, local_opt_path))
-                local_opt_budget_hists = push!(local_opt_budget_hists, compute_budget_hist(ipp_problem, local_opt_path))
-                catnipp_distances = push!(catnipp_distances, InformativePathPlanning.path_distance(ipp_problem, route))
-                catnipp_objectives = push!(catnipp_objectives, catnipp_objective(ipp_problem, route))
-                catnipp_obj_hists = push!(catnipp_obj_hists, compute_obj_hist(ipp_problem, route))
-                catnipp_budget_hists = push!(catnipp_budget_hists, compute_budget_hist(ipp_problem, route))
+                aspo_planning_times = push!(aspo_planning_times, t)
+                catnipp_ts_distances = push!(catnipp_ts_distances, InformativePathPlanning.path_distance(ipp_problem, route))
+                catnipp_ts_objectives = push!(catnipp_ts_objectives, catnipp_objective(ipp_problem, route))
+                catnipp_ts_obj_hists = push!(catnipp_ts_obj_hists, compute_obj_hist(ipp_problem, route))
+                catnipp_ts_budget_hists = push!(catnipp_ts_budget_hists, compute_budget_hist(ipp_problem, route))
+                catnipp_greedy_distances = push!(catnipp_greedy_distances, InformativePathPlanning.path_distance(ipp_problem, greedy_route))
+                catnipp_greedy_objectives = push!(catnipp_greedy_objectives, catnipp_objective(ipp_problem, greedy_route))
+                catnipp_greedy_obj_hists = push!(catnipp_greedy_obj_hists, compute_obj_hist(ipp_problem, greedy_route))
+                catnipp_greedy_budget_hists = push!(catnipp_greedy_budget_hists, compute_budget_hist(ipp_problem, greedy_route))
 
-                println("ASPO Objective: $(aspo_objectives[end])")
-                println("Local Opt Objective: $(local_opt_objectives[end])")
-                println("CatNIPP Objective: $(catnipp_objectives[end])")
+                println("ASPO Objective: $(mean(aspo_objectives))")
+                println("CatNIPP TS Objective: $(mean(catnipp_ts_objectives))")
+                println("CatNIPP Greedy Objective: $(mean(catnipp_greedy_objectives))")
+                println("ASPO planning time: $(mean(aspo_planning_times))")
             end
         end
 
@@ -405,15 +477,16 @@ function run_catnipp_comparison()
         JLD2.save(data_path * "/catnipp_results/budget_$(budget)/aspo_objectives.jld2", "aspo_objectives", aspo_objectives)
         JLD2.save(data_path * "/catnipp_results/budget_$(budget)/aspo_obj_hists.jld2", "aspo_obj_hists", aspo_obj_hists)
         JLD2.save(data_path * "/catnipp_results/budget_$(budget)/aspo_budget_hists.jld2", "aspo_budget_hists", aspo_budget_hists)
-        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/local_opt_paths.jld2", "local_opt_paths", local_opt_paths)
-        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/local_opt_distances.jld2", "local_opt_distances", local_opt_distances)
-        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/local_opt_objectives.jld2", "local_opt_objectives", local_opt_objectives)
-        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/local_opt_obj_hists.jld2", "local_opt_obj_hists", local_opt_obj_hists)
-        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/local_opt_budget_hists.jld2", "local_opt_budget_hists", local_opt_budget_hists)
-        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_distances.jld2", "catnipp_distances", catnipp_distances)
-        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_objectives.jld2", "catnipp_objectives", catnipp_objectives)
-        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_obj_hists.jld2", "catnipp_obj_hists", catnipp_obj_hists)
-        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_budget_hists.jld2", "catnipp_budget_hists", catnipp_budget_hists)
+        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/aspo_planning_times.jld2", "aspo_planning_times", aspo_planning_times)
+        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_ts_distances.jld2", "catnipp_ts_distances", catnipp_ts_distances)
+        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_ts_objectives.jld2", "catnipp_ts_objectives", catnipp_ts_objectives)
+        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_ts_obj_hists.jld2", "catnipp_ts_obj_hists", catnipp_ts_obj_hists)
+        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_ts_budget_hists.jld2", "catnipp_ts_budget_hists", catnipp_ts_budget_hists)
+        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_greedy_distances.jld2", "catnipp_greedy_distances", catnipp_greedy_distances)
+        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_greedy_objectives.jld2", "catnipp_greedy_objectives", catnipp_greedy_objectives)
+        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_greedy_obj_hists.jld2", "catnipp_greedy_obj_hists", catnipp_greedy_obj_hists)
+        JLD2.save(data_path * "/catnipp_results/budget_$(budget)/catnipp_greedy_budget_hists.jld2", "catnipp_greedy_budget_hists", catnipp_greedy_budget_hists)
+
     end
 
 end

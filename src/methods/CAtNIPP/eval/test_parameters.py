@@ -1,0 +1,25 @@
+INPUT_DIM = 4
+EMBEDDING_DIM = 128
+USE_GPU = False
+USE_GPU_GLOBAL = True
+NUM_GPU = 1
+NUM_META_AGENT = 1
+GAMMA = 1
+FOLDER_NAME = 'ipp-4heads'
+model_path = f'model/{FOLDER_NAME}'
+result_path = f'result/{FOLDER_NAME}'
+
+SEED = 1
+NUM_TEST = 1
+TRAJECTORY_SAMPLING = True # Set to False to run greedy
+PLAN_STEP = 15
+NUM_SAMPLE_TEST = 4 # do not exceed 99
+SAVE_IMG_GAP = 1
+SAVE_CSV_RESULT = True
+SAVE_TRAJECTORY_HISTORY = True
+SAVE_TIME_RESULT = True
+
+BUDGET_RANGE = (3.99999, 4) #(9.99999, 10) # (5.99999, 6)
+SAMPLE_SIZE = 400
+K_SIZE = 20
+SAMPLE_LENGTH = 0.2 # 0/None: sample at nodes
