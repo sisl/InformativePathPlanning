@@ -27,7 +27,7 @@ end
 ##########################################################################
 # A-IPP
 ##########################################################################
-function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
+function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false, relax_round::Bool=false)
     tick()
 
     if relax
@@ -170,7 +170,12 @@ function run_AIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
         @error("No Solution")
     end
 
-    if relax
+    if relax_round
+        optimal_z = JuMP.value.(z)
+        optimal_u = JuMP.value.(u)
+        path = extract_path(ipp_problem, G, deepcopy(optimal_z), deepcopy(optimal_u), start, goal, all_pairs_shortest_paths, dist, B)
+        return path, objVal
+    elseif relax
         return [], objVal
     else
         optimal_z = JuMP.value.(z)
@@ -183,7 +188,7 @@ end
 ##########################################################################
 # D-IPP
 ##########################################################################
-function run_DIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
+function run_DIPP_exact(ipp_problem::IPP, idx, relax::Bool=false, relax_round::Bool=false)
     tick()
 
     if relax
@@ -334,7 +339,12 @@ function run_DIPP_exact(ipp_problem::IPP, idx, relax::Bool=false)
         @error("No Solution")
     end
 
-    if relax
+    if relax_round
+        optimal_z = JuMP.value.(z)
+        optimal_u = JuMP.value.(u)
+        path = extract_path(ipp_problem, G, deepcopy(optimal_z), deepcopy(optimal_u), start, goal, all_pairs_shortest_paths, dist, B)
+        return path, objVal
+    elseif relax
         return [], objVal
     else
         optimal_z = JuMP.value.(z)
@@ -514,5 +524,32 @@ function solve(ipp_problem::IPP, method::trΣ⁻¹, relax::Bool=false)
 
     else
         error("Objective not recognized trΣ⁻¹")
+    end
+end
+
+function solve(ipp_problem::IPP, method::RelaxRound, relax::Bool=true)
+    """ 
+    Takes in IPP problem definition and returns the path and objective value
+    using the solution method specified by method.
+    """
+
+    idx = []
+    for (v1, edges) in collect(enumerate(ipp_problem.Graph.G))
+        for v2 in edges
+            push!(idx, (v1, v2)) 
+        end
+    end
+
+    if ipp_problem.objective == "A-IPP"
+        path, objVal = run_AIPP_exact(ipp_problem, idx, relax, true)
+        return path, objective(ipp_problem, path)
+    elseif ipp_problem.objective == "B-IPP"
+        @error("B-IPP exact method should be called using trΣ⁻¹()")
+
+    elseif ipp_problem.objective == "D-IPP"
+        path, objVal = run_DIPP_exact(ipp_problem, idx, relax, true)
+        return path, objective(ipp_problem, path)
+    else
+        error("Objective not recognized Exact")
     end
 end

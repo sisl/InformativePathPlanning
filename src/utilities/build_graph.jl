@@ -7,8 +7,11 @@ function build_graph(rng, data_path::String, n::Int, m::Int, edge_length::Int, s
     all_pairs_shortest_paths = []
     try # try loading them first
         println("Loading graph...")
-        graph = JLD2.load(data_path * "/graph_cache/" * "$(n)_graph.jld2", "graph")
-        all_pairs_shortest_paths = JLD2.load(data_path * "/graph_cache/" * "$(n)_all_pairs_shortest_paths.jld2", "all_pairs_shortest_paths")
+        
+        graph = JLD2.load(joinpath(@__DIR__, "../../data/graph_cache/" * "$(n)_graph.jld2"), "graph")
+        all_pairs_shortest_paths = JLD2.load(joinpath(@__DIR__, "../../data/graph_cache/" * "$(n)_all_pairs_shortest_paths.jld2"), "all_pairs_shortest_paths")
+        # graph = JLD2.load(data_path * "/graph_cache/" * "$(n)_graph.jld2", "graph")
+        # all_pairs_shortest_paths = JLD2.load(data_path * "/graph_cache/" * "$(n)_all_pairs_shortest_paths.jld2", "all_pairs_shortest_paths")
         println("Loaded graph")
     catch
         println("Caught! Building graph and all_pairs_shortest_paths")

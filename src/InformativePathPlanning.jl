@@ -47,6 +47,7 @@ struct trΣ⁻¹ <: SolutionMethod end
 struct random <: SolutionMethod end
 struct DuttaMIP <: SolutionMethod end
 struct ASPOCAtNIPPComparison <: SolutionMethod end
+struct RelaxRound <: SolutionMethod end
 
 @with_kw struct IPPGraph
     G::Vector{Vector{Int64}}                                                # G[i] returns the neighbors of node i
@@ -199,6 +200,7 @@ include("multiagent_example.jl")
 include("multimodal_example.jl")
 include("poi_example.jl")
 include("run_catnipp_comparison.jl")
+include("run_paper_experiments.jl")
 
 export IPPGraph, 
     MeasurementModel, 
@@ -215,6 +217,7 @@ export IPPGraph,
     trΣ⁻¹, 
     random, 
     DuttaMIP, 
+    RelaxRound,
     solve, 
     relax, 
     run_simple_example, 
@@ -233,6 +236,7 @@ export IPPGraph,
     figure_6,
     figure_7,
     figure_9,
+    figure_relax_round_vs_aspo,
     gurobi_available,
     mosek_available,
     run_catnipp_comparison,

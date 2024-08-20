@@ -42,6 +42,8 @@ greedy_color = scheme[5]
 mip_color = scheme[6]
 trΣ⁻¹_color = scheme[7]
 relaxed_color = scheme[8]
+RelaxRound_color = scheme[9]
+
 theme(:default)
 default(titlefont=font(24, "Computer Modern"))
 default(guidefont=font(22, "Computer Modern"))
@@ -1005,4 +1007,113 @@ function figure_9(load_data=false, data_path = "../data/")
     plot(plots..., layout=(1, 3), size=(1800, 500), legend=false, margin=7mm)
    
     savefig("figures/paper/figure_9/expected_improvement.pdf")
+end
+
+
+#####################################################################################
+# Additional results
+#####################################################################################
+function figure_relax_round_vs_aspo(load_data=false, data_path = "../data/")
+    """
+    Runtime and A-IPP objective as a function of the graph size.
+    """
+    grid_nodes = collect(123:-12:4).^2
+    num_sims = 25
+    edge_length = 1
+    L = 0.01*edge_length # length scale 
+    σ = 1.0
+    objective = "D-IPP" # "A-IPP"
+    solution_time = 120.0
+    rng = MersenneTwister(12345)
+    m = 20
+    B = 4*edge_length
+
+    if load_data
+        data = JLD2.load(joinpath(@__DIR__, "../data/figure_relax_round_vs_aspo_$(objective).jld2"), "data")
+        # data = JLD2.load(data_path * "figure_relax_round_vs_aspo.jld2", "data")
+    else
+        data = []
+        methods = [RelaxRound(), ASPO()]
+
+        p = Progress(length(grid_nodes)*num_sims*length(methods))
+
+        for (n_idx, n) in enumerate(grid_nodes)
+            start = 1
+            goal = n
+            replan_rate = round(Int, 0.05 * B/edge_length * sqrt(n))#round(Int, 0.1 * B/edge_length * sqrt(n))
+
+            # Generate a grid graph
+            Graph = build_graph(rng, data_path, n, m, edge_length, start, goal, objective)
+
+            for (method_idx, method) in enumerate(methods)
+                for i in 1:num_sims
+                    shared_idx = (n_idx - 1) * length(methods) * num_sims + (method_idx - 1) * num_sims + i
+                    # shared_idx = (n_idx-1)*length(methods)*num_sims + i
+                    println("##########################################################################################")
+                    println( string(shared_idx) * "/" * string(length(grid_nodes)*num_sims*length(methods)) * " grid_nodes " * string(n) * " run_type " * string(method))
+                    println("##########################################################################################")
+
+                    # Here we have to change only the Omega's 
+                    omega_x = rand(rng, m)*edge_length
+                    omega_y = rand(rng, m)*edge_length
+                    Omega = hcat(omega_x, omega_y)
+                    Graph = IPPGraph(Graph.G, Graph.start, Graph.goal, Graph.Theta, Omega, Graph.all_pairs_shortest_paths, Graph.distances, Graph.true_map, Graph.edge_length)
+
+                    # Generate a new measurement model since Omega was updated
+                    Σₓ = kernel(Graph.Omega, Graph.Omega, L) # = K(X⁺, X⁺)
+                    Σₓ = round.(Σₓ, digits=8)
+                    ϵ = Matrix{Float64}(I, size(Σₓ))*1e-6 # Add a Small Constant to the Diagonal (Jitter): This is a common technique to improve the numerical stability of a kernel matrix. 
+                    Σₓ⁻¹ = inv(Σₓ + ϵ)
+                    Σₓ⁻¹ = round.(Σₓ⁻¹, digits=8)
+                    KX⁺X = kernel(Graph.Omega, Graph.Theta, L) # = K(X⁺, X)
+                    Aᵀ = Σₓ⁻¹ * KX⁺X
+                    A = Aᵀ'
+                    A = round.(A, digits=8)
+                    measurement_model = MeasurementModel(σ, Σₓ, Σₓ⁻¹, L, A)
+
+                    # Create an IPP problem
+                    ipp_problem = IPP(rng, n, m, Graph, measurement_model, objective, B, solution_time, replan_rate)
+
+                    # Solve the IPP problem
+                    val, t = @timed solve(ipp_problem, method)
+                    path, objective_value = val
+                    new_data = SimulationData(sim_number=shared_idx, run_type=method, n=n, m=m, B=B, L=L, replan_rate=replan_rate, timeout=solution_time, σ_min=1e-5, σ_max=σ, objVal=objective_value, y_hist=Vector{Float64}(), EI_hist=Vector{Float64}(), lower_bound=0.0, upper_bound=0.0, path=path, drills=Vector{Int}(), Omega=ipp_problem.Graph.Omega, runtime=t)
+                    push!(data, new_data)
+
+                    @show objective_value
+                    @show t
+
+                    # Plot the IPP problem
+                    plot(ipp_problem, path, objective_value, t, "figures/paper/figure_relax_round_vs_aspo/$(objective)/runs/$(typeof(method))_$(n)n_$(objective)_$(i).pdf")
+                    next!(p)
+                    sleep(0.1)
+                end
+            end
+            JLD2.save(joinpath(@__DIR__, "../data/figure_relax_round_vs_aspo_$(objective).jld2"), "data", data)
+        end
+    end
+    # Plotting 
+    ASPO_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == ASPO])
+    RelaxRound_xdata = unique([data[i].n for i in 1:length(data) if typeof(data[i].run_type) == RelaxRound])
+
+    ASPO_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == ASPO], (num_sims, length(ASPO_xdata)))
+    RelaxRound_ydata = reshape([data[i].runtime for i in 1:length(data) if typeof(data[i].run_type) == RelaxRound], (num_sims, length(RelaxRound_xdata)))
+
+    ###################################
+    # Runtime vs. Number of Graph Nodes
+    plot(color_palette=:tab10)
+    plot!(ASPO_xdata, mean(ASPO_ydata, dims=1)', ribbon = std_err(ASPO_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPO", color=ASPO_color, yscale=:log10)
+    plot!(RelaxRound_xdata, mean(RelaxRound_ydata, dims=1)', ribbon = std_err(RelaxRound_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Relax Round", color=RelaxRound_color, title="Runtime vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
+    rt_plot = plot!(ASPO_xdata, data[1].timeout .* ones(size(ASPO_xdata)), label = "Timeout", color=:black, linestyle=:dash, linewidth=4, title="Runtime vs. Graph Size", legend=false, yscale=:log10, dpi=500, widen=false, margin=5mm, size=(600,500), framestyle=:box, ylims=(1e-2, 1e3))
+    ###################################
+    
+    ASPO_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == ASPO], (num_sims, length(ASPO_xdata)))
+    RelaxRound_ydata = reshape([data[i].objVal for i in 1:length(data) if typeof(data[i].run_type) == RelaxRound], (num_sims, length(RelaxRound_xdata)))
+    
+    plot(color_palette=:tab10)
+    plot!(ASPO_xdata, mean(ASPO_ydata, dims=1)', ribbon = std_err(ASPO_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "ASPO", color=ASPO_color)
+    obj_plot = plot!(RelaxRound_xdata, mean(RelaxRound_ydata, dims=1)', ribbon = std_err(RelaxRound_ydata, num_sims), fillalpha = 0.2, xlabel = "Number of Graph Nodes", label = "Relax Round", color=RelaxRound_color, title="A-IPP vs. Graph Size", legend=false, framestyle=:box, widen=false, margin=5mm, size=(600,500))
+    
+    plot([rt_plot, obj_plot]..., size=(1200, 500), layout=(1,2), margin=8mm, legend=true, widen=false, xticks =[0.0, 5e3, 10e3, 15e3])
+    savefig("figures/paper/figure_relax_round_vs_aspo/relax_round_vs_aspo_$(objective).pdf")
 end
