@@ -1,14 +1,8 @@
 import sys
 import os
 
-# # Assuming your notebook is located in the "subfolder"
-# notebook_dir = os.getcwd()  # Gets the current working directory of the notebook
-# parent_dir = os.path.abspath(os.path.join(notebook_dir, '..'))
-# sys.path.append(parent_dir)
-
 import copy
 import csv
-import os
 import ray
 import torch
 import time
@@ -27,10 +21,6 @@ else:
     device = torch.device("cpu")
     print("Using CPU backend for computations.")
 
-
-
-# # Print the parent directory
-# print("Parent directory:", parent_dir)
 
 try:
     from runner import Runner
@@ -149,14 +139,6 @@ def run_test(test_number):
 @ray.remote(num_cpus=8/NUM_META_AGENT, num_gpus=0)  # Set num_gpus to 0 as MPS doesn't use CUDA
 class RLRunner(Runner):
     def __init__(self, metaAgentID):
-        # import sys
-        # import os
-        # parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        # sys.path.append(parent_dir)
-
-        # Re-import Runner using the same method as in the main script
-        # from runner import Runner
-
         super().__init__(metaAgentID)
         self.device = device  # Use the device defined earlier
 
@@ -172,8 +154,6 @@ class RLRunner(Runner):
         perf_metrics = worker.perf_metrics
         
         ground_truth = worker.env.ground_truth
-        # save ground truth
-
 
         return perf_metrics
 
